@@ -1,5 +1,5 @@
 {
-  "name": "test",
+  "name": "sql-model-factory",
   "version": "0.0.1",
   "description": "",
   "main": "src/ModelFactory.js",

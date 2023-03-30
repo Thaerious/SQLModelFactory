@@ -1,7 +1,6 @@
 import sqlite3 from "better-sqlite3";
 
 /**
- * 
  * This class is responsible for creating and managing database tables and their corresponding models. 
  * This class is a factory that generates classes whcih in turn use a proxy to update the tables on 
  * write and store values for future reads.
@@ -19,8 +18,8 @@ class ModelFactory {
 
     /**
      * The prepare() method is used interanally to prepare an SQL statement it for execution
-     * using the settings passed into the constructor.
-     */ 
+     * using the options passed into the constructor.
+     */
     __prepare(stmt) {
         try {
             return new sqlite3(this.dbFile, this.sqlOptions).prepare(stmt);
@@ -37,7 +36,7 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClass(model, aClass) {
-        this.__createObjectTable(model, this.table);
+        this.__createObjectTable(model, aClass.name);
         return new Proxy(aClass.constructor, new ClassHandler(this, aClass, model));
     }
 
@@ -49,9 +48,9 @@ class ModelFactory {
             if (typeof model[key] === "string") {
                 fields.push(`${key} ${model[key]}`)
             }
-            else if (Array.isArray(model[key])) {
+            else if (typeof model[key] === "object") {
                 const childTable = `${table}_${key}`;
-                const childModel = model[key][0];
+                const childModel = model[key];
                 this.__createArrayTable(childModel, childTable);
             }
         }
@@ -97,7 +96,7 @@ class ClassHandler {
      * Load a previously constructed instance from storage.
      */
     load(idx) {
-        const data = this.factory.prepare(`
+        const data = this.factory.__prepare(`
             SELECT * FROM ${this.table}
             WHERE idx = ?
         `).get(idx);
@@ -105,11 +104,11 @@ class ClassHandler {
         if (!data) throw new Error(`Unknown object index ${idx}`);
 
         for (const key of Object.keys(this.model)) {
-            if (Array.isArray(this.model[key])) {
+            if (typeof this.model[key] === "object") {
                 const childTable = `${this.table}_${key}`;
                 const array = this.loadArray(idx, childTable);
 
-                const ahnd = new ArrayInstanceHandler(this.factory, idx, childTable, this.model[key][0]);
+                const ahnd = new ArrayInstanceHandler(this.factory, idx, childTable, this.model[key]);
                 data[key] = new Proxy(array, ahnd);
             }
         }
@@ -117,10 +116,13 @@ class ClassHandler {
         return new Proxy(new this.aClass(), new InstanceHandler(this.factory, idx, this.table, this.model, data));
     }
 
+    /**
+     * Load an array with records from a table.
+     */
     loadArray(rootIdx, table) {
         const array = [];
 
-        const all = this.factory.prepare(`
+        const all = this.factory.__prepare(`
             SELECT * FROM ${table}
             WHERE root_idx = ?
         `).all(rootIdx);
@@ -144,7 +146,7 @@ class ClassHandler {
         if (typeof args[0] === "number") return this.load(args[0]);
         const divided = divideObject(args[0]);
 
-        this.idx = this.factory.prepare(`
+        this.idx = this.factory.__prepare(`
             INSERT INTO ${this.table}
             (${divided.keys.join()})
             VALUES (${divided.placeHolders})
@@ -152,15 +154,62 @@ class ClassHandler {
 
         return this.load(this.idx);
     }
+
+    get(target, prop) {
+        console.log("get", prop, this);
+        console.log("prop.substring", this[prop.substring(1)]);
+
+        if (prop.charAt(0) === "$") {
+            const field = this[prop.substring(1)];
+            if (typeof field === "function") {
+                return this[prop.substring(1)].bind(this);
+            } else {
+                return this[prop.substring(1)];
+            }
+        }
+        if (this.model[prop]) return this.data[prop];
+        return Reflect.get(...arguments);
+    }
+
+    /**
+     * Retrieve an array of indices.
+     * Use $dir to call.
+     */
+    dir() {
+        const all = this.factory.__prepare(`
+            SELECT idx FROM ${this.table}
+        `).all();
+        return all.map(i => i.idx);
+    }
+
+    /**
+     * Retrieve an array of all rows.
+     * Use $all to call.
+     */    
+    all() {
+        return this.factory.__prepare(`
+            SELECT * FROM ${this.table}
+        `).all();
+    }
+
+    /**
+     * Drop the associated table.
+     * Use $drop to call.
+     */    
+    drop() {
+        return this.factory.__prepare(`
+            DROP TABLE ${this.table}
+        `).run();
+    }
 }
 
 /**
  * Handles the storage and retrieval of instanced data.
  */
 class InstanceHandler {
-    constructor(factory, rootIdx, table, model, data) {
+    constructor(factory, idx, table, model, data) {
         this.factory = factory;
-        this.rootIdx = rootIdx;
+        this.idx = idx;
         this.table = table;
         this.model = model;
         this.data = data;
@@ -172,7 +221,15 @@ class InstanceHandler {
      * the object properties are used.
      */
     get(target, prop) {
-        if (prop.charAt(0) === "$") return this[prop.substring(1)];
+        if (prop.charAt(0) === "$") {
+            const field = this[prop.substring(1)];
+            if (typeof field === "function") {
+                return this[prop.substring(1)].bind(this);
+            } else {
+                console.log("meta prop", prop);
+                return this[prop.substring(1)];
+            }
+        }
         if (this.model[prop]) return this.data[prop];
         return Reflect.get(...arguments);
     }
@@ -180,13 +237,13 @@ class InstanceHandler {
     /**
      * Handles setting and storing values. If the property is in the schema than data is store
      * in the db, otherwise the properties only exist on the object.
-     */    
+     */
     set(target, prop, value) {
         if (this.model.hasOwnProperty(prop)) {
-            this.factory.prepare(`
+            this.factory.__prepare(`
                 UPDATE ${this.table}
                 SET ${prop} = ?
-                WHERE idx = ${this.rootIdx}
+                WHERE idx = ${this.idx}
             `).run(value);
 
             this.data[prop] = value;
@@ -195,26 +252,38 @@ class InstanceHandler {
             return Reflect.set(...arguments);
         }
     }
+
+    /**
+     * Remove this record from the table.  
+     * Call as instance.$delete().
+     */
+    delete() {
+        console.log(`delete ${this.idx}`);
+        return this.factory.__prepare(`
+            DELETE FROM ${this.table} WHERE idx = ?
+        `).run(this.idx);
+    }
 }
 
 /**
  * Handles the storage and retrieval of instanced array data.
  */
 class ArrayInstanceHandler extends InstanceHandler {
-
     /**
      * Handles setting and storing values. The data is stored with both the root index
      * and array index.
-     */        
+     */
     set(target, prop, value) {
         if (prop !== "length") {
             target[prop] = value;
 
-            value.idx = prop;
-            value.root_idx = this.rootIdx;
-            const divided = divideObject(value);
+            const divided = divideObject({
+                idx: prop,
+                root_idx: this.idx,
+                ...value,
+            });
 
-            this.factory.prepare(`
+            this.factory.__prepare(`
                 INSERT OR REPLACE INTO ${this.table}
                 (${divided.keys.join()})
                 VALUES
@@ -224,6 +293,19 @@ class ArrayInstanceHandler extends InstanceHandler {
             return true;
         } else {
             return Reflect.set(...arguments);
+        }
+    }
+
+    deleteProperty(target, prop) {
+        console.log(target);
+        console.log(this.table);
+
+        if (prop in target) {
+            delete target[prop];
+            this.factory.__prepare(`
+                DELETE FROM ${this.table} WHERE idx = ?
+            `).run(prop);
+            return true;
         }
     }
 }
