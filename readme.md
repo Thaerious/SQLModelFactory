@@ -1,6 +1,7 @@
 
 # Description
-This Javascript module creates Class objects to manage the creation and updating of database tables.
+This Javascript module proxies class objects to manage the creation and updating of database tables.
+This allows you to create DB records in a way similar to JS classes.
 
 ## Quick Start
 Assign proxies to the ModelBase class and create the databse tables.
@@ -8,7 +9,7 @@ Use the proxied class 'Model' to create new records.
 
     import ModelFactory from "sql-model-factory";
 
-    const mFactory = new ModelFactory("production.db");
+    const mFactory = new ModelFactory();
     const model = {
         "name": "VARCHAR(32) NOT NULL",
         "score": "INTEGER DEFAULT 0 NOT NULL"
@@ -16,6 +17,7 @@ Use the proxied class 'Model' to create new records.
 
     class ModelBase {}
     const Model = mFactory.createClass(model, ModelBase);
+    Model.$createTables("production.db");
 
 Check the table with.  Notice the extra column, that is the 'idx' column.
 Because of this, the model can not contain an idx field.

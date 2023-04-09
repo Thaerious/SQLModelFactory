@@ -1,5 +1,5 @@
 {
-  "name": "sql-model-factory",
+  "name": "@thaerious/sql-model-factory",
   "version": "0.0.1",
   "description": "",
   "main": "src/ModelFactory.js",
@@ -7,6 +7,7 @@
   "author": "",
   "license": "MIT",
   "type": "module",
+  "homepage": "https://github.com/Thaerious/SQLModelFactory#readme",
   "dependencies": {
     "better-sqlite3": "^8.2.0"
   }
