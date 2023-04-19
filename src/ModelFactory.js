@@ -3,6 +3,13 @@ import ClassProxy from "./ClassProxy.js";
 import logger from "./setupLogger.js";
 import Pool from "better-sqlite-pool";
 
+class ModelFactoryError extends Error{
+    constructor(cause, expression) {
+        super('SQL prepare error', { cause });
+        this.expression = expression;        
+    }
+}
+
 /**
  * This class is responsible for creating and managing database tables and their corresponding models. 
  * This class is a factory that generates classes whcih in turn use a proxy to update the tables on 
@@ -13,7 +20,6 @@ class ModelFactory {
         this.dbFile = dbFile;
         this.sqlOptions = sqlOptions;
         this.classes = {};
-        // this.pool = new Pool(dbFile, sqlOptions);
     }
 
     /**
@@ -30,10 +36,7 @@ class ModelFactory {
             const statement = this.sq3.prepare(expression);
             return statement;
         } catch (error) {
-            console.log("prepare error");
-            console.log(expression);
-            console.log(error);
-            throw error;
+            throw new ModelFactoryError(error, expression);
         }
     }
 
