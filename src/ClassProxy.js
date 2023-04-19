@@ -53,7 +53,7 @@ export default class ClassProxy {
                 const childTableName = childModel?.$table ? `${this.tableName}_${childModel.$table}` : `${this.tableName}_${key}`
                 const array = this._loadArray(row.idx, childTableName);
         
-                const ahnd = new ArrayInstanceHandler(this.factory, row.idx, childTableName, this.model[key]);
+                const ahnd = new ArrayInstanceHandler(this, row.idx, childTableName, this.model[key]);
                 data[key] = new Proxy(array, ahnd);
             }
         }
@@ -98,7 +98,7 @@ export default class ClassProxy {
             ...this._deReference(row),
         };        
 
-        const hnd = new InstanceHandler(this.factory, row.idx, this.tableName, this.model);
+        const hnd = new InstanceHandler(this, row.idx, this.tableName, this.model);
         this.instatiated.set(data.idx, new Proxy(data, hnd));
         return this.instatiated.get(row.idx);        
     }
@@ -225,5 +225,9 @@ export default class ClassProxy {
             tableName,
             [`idx INTEGER PRIMARY KEY AUTOINCREMENT`]
         );
+    }
+
+    $cleanup(object) {
+        this.instatiated.delete(object.idx);
     }
 }

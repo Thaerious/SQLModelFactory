@@ -8,8 +8,8 @@ export class InstanceHandler {
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
      */
-    constructor(factory, idx, tableName, model) {
-        this.factory = factory;
+    constructor(aClass, idx, tableName, model) {
+        this.aClass = aClass;
         this.tableName = tableName;
         this.model = model;
         this.idx = idx;
@@ -21,17 +21,15 @@ export class InstanceHandler {
      * the object properties are used.
      */
     get(target, prop) {
-        if (typeof prop === "string") {
-            if (prop.startsWith("$") && this[prop]) {
-                return Reflect.get(this, prop);
-            }
-
-            if (prop.startsWith("$") && this[prop.substring(1)]) {
-                return Reflect.get(this, prop.substring(1));
-            }
+        if (typeof prop === "string" && prop.startsWith("$")) {
+            return Reflect.get(this, prop.substring(1));
         }
 
-        return Reflect.get(target, prop);
+        if (prop in target) {
+            return Reflect.get(target, prop);
+        }
+
+        return Reflect.get(this, prop);
     }
 
     /**
@@ -54,7 +52,7 @@ export class InstanceHandler {
     }
 
     _setVal(prop, value) {
-        this.factory.prepare(`
+        this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
             WHERE idx = ${this.idx}
@@ -62,24 +60,32 @@ export class InstanceHandler {
     }
 
     _setRef(prop, value) {
-        this.factory.prepare(`
+        this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
             WHERE idx = ${this.idx}
         `).run(value.idx);
     }
 
-    /**
-     * Remove this record from the table.
-     * Call as instance.$delete().
-     */
-    $delete() {
-        return base.$prepare(`
-            DELETE FROM ${this.tableName} WHERE idx = ?
-        `).run(this.idx);
+    delete() {
+        for (const key of Object.keys(this.$model)) {
+            if (Array.isArray(this.$model[key])) {
+                const childModel = this.$model[key];
+                const childTableName = childModel?.$table ? `${this.$tableName}_${childModel.$table}` : `${this.$tableName}_${key}`
+                this.$prepare(`
+                    DELETE FROM ${childTableName} WHERE ridx = ?
+                `).run(this.idx);
+            }
+        }
+
+        this.aClass.$cleanup(this);
+
+        return this.$prepare(`
+            DELETE FROM ${this.$tableName} WHERE idx = ?
+        `).run(this.idx);        
     }
 
-    $prepare(sql) {
-        return this.factory.prepare(sql);
+    prepare(sql) {
+        return this.aClass.factory.prepare(sql);
     }
 }

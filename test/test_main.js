@@ -101,6 +101,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("can be retrieved by index with $get", function () {
                 assert.ok(this.classes.Cred.$get(this.abdul.idx));
+                assert.strictEqual(this.abdul, this.classes.Cred.$get(this.abdul.idx));
             });         
             
             it("can be retrieved by index with $all", function () {
@@ -262,4 +263,66 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
         });       
     });
+
+    describe("delete instance", function () {
+        before(function () {
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+            this.classes = this.factory.createClasses(models);
+            this.classes.Game.$createTables();
+            this.classes.Cred.$createTables();
+            this.marg = new this.classes.Cred({ username: "marg", email: "marg@eden.com" });
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("pre-check exists", function () {
+            assert.ok(this.marg);
+            assert.ok(this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.marg.idx));            
+        });
+
+        describe("do delete", function () {
+            before(function () {
+                this.marg.$delete();
+            });
+
+            it("no longer exists in db", function () {
+                const actual = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.marg.idx)
+                assert.ok(!actual);            
+            }); 
+
+            it("get after deletions returns undefined", function () {
+                const marg = this.classes.Cred.$get(this.marg.idx);
+                assert.strictEqual(marg, undefined);
+            });             
+        });
+    });
+
+    describe("add un-reflected value to array field", function () {
+        before(function () {
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+            this.classes = this.factory.createClasses(models);
+            this.classes.Game.$createTables();
+            this.classes.Cred.$createTables();
+            this.homer = new this.classes.Cred({ username: "homer", email: "homer@simpsons.com" });
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("throws exception", function () {
+            let caught = false;
+            try {
+                this.homer.friends[0] = "aString";
+            } catch {
+                caught = true;
+            }
+            assert.ok(caught);
+        });
+
+    });
+
+
 });

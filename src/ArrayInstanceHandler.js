@@ -20,7 +20,7 @@ export class ArrayInstanceHandler extends InstanceHandler {
                 throw new Error("Can only assign reflected objects to managed array");
             }
 
-            this.$prepare(`
+            this.prepare(`
                 INSERT OR REPLACE INTO ${this.tableName}
                 (aidx, ridx, oidx)
                 VALUES
@@ -36,7 +36,7 @@ export class ArrayInstanceHandler extends InstanceHandler {
     deleteProperty(target, prop) {
         if (prop in target) {
             delete target[prop];
-            this.$prepare(`
+            this.prepare(`
                 DELETE FROM ${this.tableName} WHERE aidx = ?
             `).run(prop);
             return true;
