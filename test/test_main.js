@@ -102,20 +102,20 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             it("can be retrieved by index with $get", function () {
                 assert.ok(this.classes.Cred.$get(this.abdul.idx));
                 assert.strictEqual(this.abdul, this.classes.Cred.$get(this.abdul.idx));
-            });         
-            
+            });
+
             it("can be retrieved by index with $all", function () {
                 const all = this.classes.Cred.$all(this.abdul.idx);
                 assert.strictEqual(all[0], this.abdul);
             });
 
             describe("check that new factory retrieves objects (not the same as other factory)", function () {
-                before (function () {
+                before(function () {
                     this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
                     this.classes = this.factory.createClasses(models);
                     this.classes.Game.$createTables();
-                    this.classes.Cred.$createTables();   
-                    
+                    this.classes.Cred.$createTables();
+
                     this.abdul2 = this.classes.Cred.$get(this.abdul.idx)
                 });
 
@@ -125,12 +125,12 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
                 it("can be retrieved by index with $get", function () {
                     assert.ok(this.classes.Cred.$get(this.abdul.idx));
-                });         
-                
+                });
+
                 it("can be retrieved by index with $all", function () {
                     const all = this.classes.Cred.$all(this.abdul.idx);
                     assert.ok(all[0]);
-                });                
+                });
             });
         });
 
@@ -146,8 +146,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             it("check sql db", function () {
                 const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.noname.idx);
                 assert.ok(row);
-            });        
-        });  
+            });
+        });
     });
 
     describe("insert data", function () {
@@ -261,7 +261,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                     assert.strictEqual(actual.friends, this.eve.friends);
                 });
             });
-        });       
+        });
     });
 
     describe("delete instance", function () {
@@ -279,7 +279,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         it("pre-check exists", function () {
             assert.ok(this.marg);
-            assert.ok(this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.marg.idx));            
+            assert.ok(this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.marg.idx));
         });
 
         describe("do delete", function () {
@@ -289,17 +289,41 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("no longer exists in db", function () {
                 const actual = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.marg.idx)
-                assert.ok(!actual);            
-            }); 
+                assert.ok(!actual);
+            });
 
             it("get after deletions returns undefined", function () {
                 const marg = this.classes.Cred.$get(this.marg.idx);
                 assert.strictEqual(marg, undefined);
-            });             
+            });
         });
     });
 
-    describe("add un-reflected value to array field", function () {
+    describe("add reflected object to array field", function () {
+        before(function () {
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+            this.classes = this.factory.createClasses(models);
+            this.classes.Game.$createTables();
+            this.classes.Cred.$createTables();
+            this.homer = new this.classes.Cred({ username: "homer", email: "homer@simpsons.com" });
+            this.marge = new this.classes.Cred({ username: "marge", email: "marge@simpsons.com" });
+            this.homer.friends[0] = this.marge;
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("size of array is one", function () {
+            assert.strictEqual(this.homer.friends.length, 1);
+        });
+
+        it("object retrieved from array is the one inserted", function () {
+            assert.strictEqual(this.homer.friends[0], this.marge);
+        });
+    });
+
+    describe("add un-reflected object to array field", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
@@ -321,7 +345,6 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             }
             assert.ok(caught);
         });
-
     });
 
 

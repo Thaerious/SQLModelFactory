@@ -78,7 +78,7 @@ export class InstanceHandler {
             }
         }
 
-        this.aClass.$cleanup(this);
+        this.aClass.cleanup(this);
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?

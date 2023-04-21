@@ -1,57 +1,44 @@
-
 # Description
-This Javascript module proxies class objects to manage the creation and updating of database tables.
-This allows you to create DB records in a way similar to JS classes.
+In traditional database operations, records are created and updated using SQL queries or similar methods. However, with the help of this module, developers can now use JavaScript classes to create and update database records instead of using SQL queries.
+
+The module acts creates proxies, which act as a mediator between the JavaScript class and the database. The module manages the mapping of the class properties and methods to the database tables, columns, and queries.
+
+With the use of this module, developers can now create and manipulate database records using familiar JavaScript class syntax, which can make code more readable and easier to understand.
 
 ## Quick Start
-Assign proxies to the ModelBase class and create the databse tables.
-Use the proxied class 'Model' to create new records.
+In a typical Model-View-Controller (MVC) framework, a Model represents how the data is organized in the application, while the controller defines how the model is manipulated.
 
-    import ModelFactory from "sql-model-factory";
+First define the model with a JS object with a field for each model.  The name of the field corresponds to the resulting table name and class name.  The key-value fields within a model description maps to the column names and descriptions in the SQL table.
 
-    const mFactory = new ModelFactory();
-    const model = {
-        "name": "VARCHAR(32) NOT NULL",
-        "score": "INTEGER DEFAULT 0 NOT NULL"
+The controllers are provided by the returned classes.  Each model has a single controller associated with it.  This controller will have a getter and a setter each field in the model.
+
+```js
+const models = {
+    "Game": {
+        "name": "VARCHAR(32)",
+    },
+    "Cred": {
+        "username": "VARCHAR(32)",
+        "prepare": "VARCHAR(32)",
+        "email": "VARCHAR(64)",
+        "created": "DATE DEFAULT (datetime('now','localtime'))",
+        "game": "@Game",
+        "friends": ["@Cred"]
     }
+};
 
-    class ModelBase {}
-    const Model = mFactory.createClass(model, ModelBase);
-    Model.$createTables("production.db");
+const factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+const { Game, Cred } = factory.createClasses(models);
+Game.$createTables();
+Cred.$createTables();
 
-Check the table with.  Notice the extra column, that is the 'idx' column.
-Because of this, the model can not contain an idx field.
+const homer = new Cred({ username: "Homer", email: "homer@eden.com" });
+const marge = new Cred({ username: "Marge", email: "marge@eden.com" });
+homer.game = new Game({ name: "Homer's Game" });
 
-    > sqlite3 .\production.db ".tables"
-    ModelBase
-
-    > sqlite3 .\production.db "SELECT * FROM ModelBase"
-    1|adam|1
-
-Fields can be set normally and chagnes are represented in the DB.
-
-### js
-
-    instance.name = "eve";
-    instance.score = 4;
-
-### bash
-
-    > sqlite3 .\production.db "SELECT * FROM ModelBase"
-    1|adam|1
-    2|eve|4
-
-Methods from the base class can manipulation fields on the model.
-
-### js
-
-    const instance = new Model({ name: "adam", score: 1 });
-    instance.incrementScore();
-
-### bash
-
-    > sqlite3 .\production.db "SELECT * FROM ModelBase"
-    1|adam|2
+homer.friends.push(marge);
+marge.friends.push(homer);     
+```
 
 ## Using Arrays
 Arrays in the reference object are stored in their own table.

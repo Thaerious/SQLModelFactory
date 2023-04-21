@@ -1,7 +1,5 @@
 import sqlite3 from "better-sqlite3";
 import ClassProxy from "./ClassProxy.js";
-import logger from "./setupLogger.js";
-import Pool from "better-sqlite-pool";
 
 class ModelFactoryError extends Error{
     constructor(cause, expression) {
@@ -30,7 +28,6 @@ class ModelFactory {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
 
-            logger.veryverbose(`prepare <green>${this.dbFile}</green>`);
             this.sq3 = new sqlite3(this.dbFile, this.sqlOptions);
             this.sq3.pragma('journal_mode = WAL');
             const statement = this.sq3.prepare(expression);
