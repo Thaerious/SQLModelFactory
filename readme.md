@@ -19,7 +19,6 @@ const models = {
     },
     "Cred": {
         "username": "VARCHAR(32)",
-        "prepare": "VARCHAR(32)",
         "email": "VARCHAR(64)",
         "created": "DATE DEFAULT (datetime('now','localtime'))",
         "game": "@Game",

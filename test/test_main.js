@@ -347,5 +347,30 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         });
     });
 
+    describe("close an unopened instance", function () {
+        before(function () {
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+        });
+
+        it("does nothing", function () {
+            this.factory.close();
+        });
+
+    });   
+
+    describe("retrieve singlton instance", function () {
+        before(function () {
+            this.factory = ModelFactory.instance(DBPATH, { /*verbose: console.log*/ });
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("is not null", function () {
+            assert.ok(this.factory);
+        });
+
+    });    
 
 });

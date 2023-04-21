@@ -20,6 +20,13 @@ class ModelFactory {
         this.classes = {};
     }
 
+    static instance(dbFile, sqlOptions) {
+        if (!this._instance) {
+            this._instance = new ModelFactory(dbFile, sqlOptions);
+        }
+        return this._instance;
+    }
+
     /**
      * The prepare() method is used interanally to prepare an SQL statement it for execution
      * using the options passed into the constructor.
@@ -38,6 +45,7 @@ class ModelFactory {
     }
 
     close() {
+        if (!this.sq3) return;
         this.sq3.close();
     }
 
@@ -48,8 +56,6 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClasses(models) {
-        this.classes = {}
-
         for (const name in models) {
             this.classes[name] = new Proxy(function () { }, new ClassProxy(this, name, models[name]));
         }
