@@ -1,4 +1,4 @@
-import { InstanceHandler } from "./InstanceHandler.js";
+import InstanceHandler from "./InstanceHandler.js";
 
 class NonReflectiveError extends Error {
     constructor(prop, value) {
@@ -14,7 +14,7 @@ class NonReflectiveError extends Error {
  * ridx : root (parent) index
  * oidx : index of the object being assigned
  */
-export class ArrayInstanceHandler extends InstanceHandler {
+export default class ArrayInstanceHandler extends InstanceHandler {
     /**
      * Handles setting and storing values in an array field.
      */

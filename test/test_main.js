@@ -56,8 +56,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         describe("create tables", function () {
             before(function () {
-                this.classes.Game.$createTables();
-                this.classes.Cred.$createTables();
+                this.classes.Game.createTables();
+                this.classes.Cred.createTables();
             });
 
             it("tables were created", function () {
@@ -77,8 +77,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
         });
 
         after(function () {
@@ -92,6 +92,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("check sql db", function () {
                 const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.abdul.idx);
+                assert.strictEqual(row.username, "abdul");
                 assert.ok(row);
             });
 
@@ -100,12 +101,12 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("can be retrieved by index with $get", function () {
-                assert.ok(this.classes.Cred.$get(this.abdul.idx));
-                assert.strictEqual(this.abdul, this.classes.Cred.$get(this.abdul.idx));
+                assert.ok(this.classes.Cred.get(this.abdul.idx));
+                assert.strictEqual(this.abdul, this.classes.Cred.get(this.abdul.idx));
             });
 
             it("can be retrieved by index with $all", function () {
-                const all = this.classes.Cred.$all(this.abdul.idx);
+                const all = this.classes.Cred.all(this.abdul.idx);
                 assert.strictEqual(all[0], this.abdul);
             });
 
@@ -113,10 +114,10 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                 before(function () {
                     this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
                     this.classes = this.factory.createClasses(models);
-                    this.classes.Game.$createTables();
-                    this.classes.Cred.$createTables();
+                    this.classes.Game.createTables();
+                    this.classes.Cred.createTables();
 
-                    this.abdul2 = this.classes.Cred.$get(this.abdul.idx)
+                    this.abdul2 = this.classes.Cred.get(this.abdul.idx);
                 });
 
                 after(function () {
@@ -124,11 +125,11 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                 });
 
                 it("can be retrieved by index with $get", function () {
-                    assert.ok(this.classes.Cred.$get(this.abdul.idx));
+                    assert.ok(this.classes.Cred.get(this.abdul.idx));
                 });
 
                 it("can be retrieved by index with $all", function () {
-                    const all = this.classes.Cred.$all(this.abdul.idx);
+                    const all = this.classes.Cred.all(this.abdul.idx);
                     assert.ok(all[0]);
                 });
             });
@@ -145,6 +146,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("check sql db", function () {
                 const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.noname.idx);
+                console.log("row", row);
                 assert.ok(row);
             });
         });
@@ -154,8 +156,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
         });
 
         after(function () {
@@ -172,12 +174,12 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("can retrieve entry by value", function () {
-                const cred = this.classes.Cred.$get({ username: "adam" });
+                const cred = this.classes.Cred.get({ username: "adam" });
                 assert.ok(cred);
             });
 
             it("can retrieve entry by index", function () {
-                const cred = this.classes.Cred.$get(this.cred.idx);
+                const cred = this.classes.Cred.get(this.cred.idx);
                 assert.ok(cred);
             });
         });
@@ -187,8 +189,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
             this.eve = new this.classes.Cred({ username: "eve", email: "eve@eden.com" });
             this.cain = new this.classes.Cred({ username: "cain", email: "cain@eden.com" });
             this.game = new this.classes.Game({ name: "eve's game" });
@@ -208,7 +210,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("value changed on new object with the same reference", function () {
-                const actual = this.classes.Cred.$get(this.eve.idx);
+                const actual = this.classes.Cred.get(this.eve.idx);
                 assert.strictEqual(actual.email, "new@email.com");
             });
         });
@@ -223,17 +225,17 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("value changed on new object with the same reference", function () {
-                const actual = this.classes.Cred.$get(this.eve.idx);
+                const actual = this.classes.Cred.get(this.eve.idx);
                 assert.strictEqual(actual.game, this.game);
             });
 
             it("retrieved objects with the same sql reference are the same", function () {
-                const actual = this.classes.Cred.$get(this.eve.idx);
+                const actual = this.classes.Cred.get(this.eve.idx);
                 assert.strictEqual(actual, this.eve);
             });
 
             it("changing value in one object changes it in all objects with the same sql reference", function () {
-                const actual = this.classes.Cred.$get(this.eve.idx);
+                const actual = this.classes.Cred.get(this.eve.idx);
                 this.eve.email = "eve@email.com"
                 assert.strictEqual(actual.email, this.eve.email);
             });
@@ -250,13 +252,13 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("retrieved objects with the same sql reference are the same", function () {
-                const actual = this.classes.Cred.$get(this.eve.idx);
+                const actual = this.classes.Cred.get(this.eve.idx);
                 assert.strictEqual(actual, this.eve);
             });
 
             describe("remove value from array field", function () {
                 it("remove value in one object changes it in all objects with the same sql reference", function () {
-                    const actual = this.classes.Cred.$get(this.eve.idx);
+                    const actual = this.classes.Cred.get(this.eve.idx);
                     this.eve.friends.pop();
                     assert.strictEqual(actual.friends, this.eve.friends);
                 });
@@ -268,8 +270,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
             this.marg = new this.classes.Cred({ username: "marg", email: "marg@eden.com" });
         });
 
@@ -284,7 +286,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         describe("do delete", function () {
             before(function () {
-                this.marg.$delete();
+                this.marg.delete();
             });
 
             it("no longer exists in db", function () {
@@ -293,7 +295,9 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("get after deletions returns undefined", function () {
-                const marg = this.classes.Cred.$get(this.marg.idx);
+                const marg = this.classes.Cred.get(this.marg.idx);
+                console.log("marg", marg);
+                console.log("this.marg", this.marg);
                 assert.strictEqual(marg, undefined);
             });
         });
@@ -303,8 +307,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
             this.homer = new this.classes.Cred({ username: "homer", email: "homer@simpsons.com" });
             this.marge = new this.classes.Cred({ username: "marge", email: "marge@simpsons.com" });
             this.homer.friends[0] = this.marge;
@@ -327,8 +331,8 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
-            this.classes.Game.$createTables();
-            this.classes.Cred.$createTables();
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
             this.homer = new this.classes.Cred({ username: "homer", email: "homer@simpsons.com" });
         });
 

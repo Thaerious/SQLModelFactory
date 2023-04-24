@@ -1,18 +1,19 @@
 /**
  * Handles the storage and retrieval of instanced data.
  */
-export class InstanceHandler {
+export default class InstanceHandler {
     /**
      * @param {ModelFactory} factory - Shared factory object that created this instance.
      * @param {Integer} idx - The index of the object this belongs to.
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
      */
-    constructor(aClass, idx, tableName, model) {
-        this.aClass = aClass;
+    constructor(factory, idx, tableName, model, map) {
+        this.factory = factory;
+        this.idx = idx;
         this.tableName = tableName;
         this.model = model;
-        this.idx = idx;
+        this.instantiated = map;
     }
 
     /**
@@ -36,11 +37,7 @@ export class InstanceHandler {
      * Handles setting and storing values. If the property is in the schema than data is store
      * in the db, otherwise the properties only exist on the object.
      */
-    set(target, prop, value) {
-        if (prop === "idx") {
-            throw new Error("Can not update read-only field 'idx'");
-        }
-
+    set(target, prop, value) {        
         if (this.model.hasOwnProperty(prop)) {
             if (this.model[prop].startsWith("@")) {
                 this._setRef(prop, value);
@@ -78,7 +75,7 @@ export class InstanceHandler {
             }
         }
 
-        this.aClass.cleanup(this);
+        this.instantiated.delete(this.idx);
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?
@@ -86,6 +83,6 @@ export class InstanceHandler {
     }
 
     prepare(sql) {
-        return this.aClass.factory.prepare(sql);
+        return this.factory.prepare(sql);
     }
 }

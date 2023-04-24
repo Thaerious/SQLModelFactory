@@ -1,5 +1,7 @@
 import sqlite3 from "better-sqlite3";
-import ClassProxy from "./ClassProxy.js";
+import ProxyBase from "./ProxyBase.js";
+import extend from "./extend.js";
+import classFactory from "./classFactory.js";
 
 class ModelFactoryError extends Error{
     constructor(cause, expression) {
@@ -20,17 +22,13 @@ class ModelFactory {
         this.classes = {};
     }
 
-    static instance(dbFile, sqlOptions) {
+    static instance(dbFile, sqlOptions = {}) {
         if (!this._instance) {
             this._instance = new ModelFactory(dbFile, sqlOptions);
         }
         return this._instance;
     }
 
-    /**
-     * The prepare() method is used interanally to prepare an SQL statement it for execution
-     * using the options passed into the constructor.
-     */
     prepare(expression) {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
@@ -57,9 +55,8 @@ class ModelFactory {
      */
     createClasses(models) {
         for (const name in models) {
-            this.classes[name] = new Proxy(function () { }, new ClassProxy(this, name, models[name]));
+            this.classes[name] = classFactory(this, name.toLowerCase(), models[name]);
         }
-
         return this.classes;
     }   
 }

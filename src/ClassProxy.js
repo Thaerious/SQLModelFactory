@@ -1,7 +1,7 @@
-import { InstanceHandler } from "./InstanceHandler.js";
-import { ArrayInstanceHandler } from "./ArrayInstanceHandler.js";
+import InstanceHandler from "./InstanceHandler.js";
+import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import divideObject from "./divideObject.js";
-import { validateColumnNames } from "./validateColumnNames.js";
+import validateColumnNames from "./validateColumnNames.js";
 
 export default class ClassProxy {
     constructor(factory, tableName, model) {
@@ -112,7 +112,7 @@ export default class ClassProxy {
             ...this._deReference(row),
         };        
 
-        const hnd = new InstanceHandler(this, row.idx, this.tableName, this.model);
+        const hnd = new InstanceHandler(this, row.idx, this.tableName, this.instantiated, this.model);
         this.instatiated.set(data.idx, new Proxy(data, hnd));
         return this.instatiated.get(row.idx);        
     }
