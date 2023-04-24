@@ -3,9 +3,9 @@ import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import validateColumnNames from "./validateColumnNames.js";
 
-class ClassFactoryError extends Error{
+class ClassFactoryError extends Error {
     constructor(index) {
-        super(`Unknown index ${index}`);   
+        super(`Unknown index ${index}`);
     }
 }
 
@@ -39,8 +39,8 @@ export default function classFactory(factory, tableName, model) {
             const row = this.constructor.factory.prepare(`
                 SELECT * FROM  ${this.constructor.tableName} WHERE idx = ?
             `).get(this.idx);
-            
-            if (!row) throw new ClassFactoryException(this.idx);
+
+            if (!row) throw new ClassFactoryError(this.idx);
 
             return this.constructor._proxyIf(row, this);
         }
@@ -124,14 +124,14 @@ export default function classFactory(factory, tableName, model) {
          */
         static get(conditions) {
             if (typeof conditions === "number") conditions = { idx: conditions };
-    
+
             const div = divideObject(conditions);
             validateColumnNames(this.model, div.keys);
-    
+
             const row = this.factory.prepare(`
                 SELECT * FROM  ${this.tableName} WHERE ${div.where}
             `).get(div.values);
-    
+
             if (!row) return undefined;
             return new this.prototype.constructor(row.idx);
         }
@@ -147,7 +147,7 @@ export default function classFactory(factory, tableName, model) {
          * @param {Integer | Object} conditions - Selector for which row to retrieve.
          */
         static all(conditions) {
-            if (typeof conditions === "number") conditions = { idx: conditions };                       
+            if (typeof conditions === "number") conditions = { idx: conditions };
 
             if (!conditions) {
                 return this.factory.prepare(`
@@ -209,7 +209,7 @@ export default function classFactory(factory, tableName, model) {
                 if (this.model[key][0] === '@' && row[key]) {
                     const className = this.model[key].substring(1);
                     const aClass = this.factory.classes[className];
-                    data[key] = aClass.$get(row[key]);
+                    data[key] = aClass.get(row[key]);
                 }
             }
 
@@ -234,6 +234,25 @@ export default function classFactory(factory, tableName, model) {
                 this._arrayify(row.idx);
             }
             return array;
+        }
+
+        static dropTables() {
+            for (const tableName of this.tables()) {
+                this.factory.prepare(`
+                    DROP TABLE IF EXISTS ${tableName}
+                `).run();
+            }
+        }
+
+        static tables() {
+            const tables = [this.tableName];
+            for (const key of Object.keys(this.model)) {
+                if (Array.isArray(model[key])) {
+                    let arrayTableName = `${tableName}_${key}`;
+                    tables.unshift(arrayTableName);
+                }
+            }
+            return tables;
         }
     }
 }

@@ -1,5 +1,4 @@
 import assert from "assert";
-import path from "path";
 import ModelFactory from "../src/ModelFactory.js";
 import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
@@ -146,7 +145,6 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("check sql db", function () {
                 const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.noname.idx);
-                console.log("row", row);
                 assert.ok(row);
             });
         });
@@ -296,8 +294,6 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             it("get after deletions returns undefined", function () {
                 const marg = this.classes.Cred.get(this.marg.idx);
-                console.log("marg", marg);
-                console.log("this.marg", this.marg);
                 assert.strictEqual(marg, undefined);
             });
         });
@@ -360,7 +356,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             this.factory.close();
         });
 
-    });   
+    });
 
     describe("retrieve singlton instance", function () {
         before(function () {
@@ -375,6 +371,113 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             assert.ok(this.factory);
         });
 
-    });    
+    });
 
+    describe("Model factory catches SQL errors as ModelFactoryError", function () {
+        before(function () {
+            this.factory = ModelFactory.instance(DBPATH, { /*verbose: console.log*/ });
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("throws an error on malformed SQL", function () {
+            let caughtError = null;
+
+            try {
+                this.factory.prepare("garbage string");
+            } catch (err) {
+                caughtError = err;
+            }
+
+            assert.ok(caughtError);
+        });
+    });
+
+    describe("#ClassFactoryError : Retrieving an unknown index with the constructor throws an Error", function () {
+        before(function () {
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+            this.classes = this.factory.createClasses(models);
+            this.classes.Game.createTables();
+            this.classes.Cred.createTables();
+        });
+
+        after(function () {
+            this.factory.close();
+        });
+
+        it("throws the error", function () {
+            let caughtError = null;
+
+            try {
+                new this.classes.Cred(99);
+            } catch (err) {
+                caughtError = err;
+            }
+
+            assert.ok(caughtError);
+        });
+    });
+
+    // describe("invoking #all without parameters retrieves all rows ", function () {
+    //     before(function () {
+    //         try {
+    //             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+    //             this.classes = this.factory.createClasses(models);
+    //             this.classes.Cred.dropTables();
+    //             this.classes.Game.dropTables();    
+                
+    // console.log(this.factory.tables());
+                
+    //             this.classes.Game.createTables();
+    //             this.classes.Cred.createTables();
+    //             this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
+    //             this.wednesday = new this.classes.Cred({ username: "wednesday", email: "wednesday@adams.com" });
+    //             this.gomez = new this.classes.Cred({ username: "gomez", email: "gomez@adams.com" });
+    //         } catch (err) {
+    //             console.log(err);
+    //         }
+    //     });
+
+    //     after(function () {
+    //         this.factory.close();
+    //     });
+
+    //     it("calling #all retrieves all 3 entries", function () {
+    //         const all = this.classes.Cred.all();
+    //         assert.strictEqual(all.length, 3);
+    //     });
+    // });
+
+    // describe("#dropTables", function () {
+    //     before(function () {
+    //         try {
+    //             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+    //             this.classes = this.factory.createClasses(models);
+                
+    //             this.classes.Game.createTables();
+    //             this.classes.Cred.createTables();
+
+    //             this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
+    //             this.wednesday = new this.classes.Cred({ username: "wednesday", email: "wednesday@adams.com" });
+    //             this.gomez = new this.classes.Cred({ username: "gomez", email: "gomez@adams.com" });
+                
+    //             this.classes.Game.dropTables();
+    //             this.classes.Cred.dropTables();
+    //         } catch (err) {
+    //             console.log(err);
+    //         }
+    //     });
+
+    //     after(function () {
+    //         this.factory.close();
+    //     });
+
+    //     it("calling #all retrieves all 3 entries", function () {
+    //         console.log(this.factory.prepare(".tables"));
+    //         // const all = this.classes.Cred.all();
+    //         // assert.strictEqual(all.length, 3);
+    //     });
+    // });    
 });

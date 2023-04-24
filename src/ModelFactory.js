@@ -1,6 +1,4 @@
 import sqlite3 from "better-sqlite3";
-import ProxyBase from "./ProxyBase.js";
-import extend from "./extend.js";
 import classFactory from "./classFactory.js";
 
 class ModelFactoryError extends Error{
@@ -59,6 +57,14 @@ class ModelFactory {
         }
         return this.classes;
     }   
+
+    tables() {
+        return ModelFactory.instance().prepare(`
+            SELECT name FROM sqlite_schema
+            WHERE 
+            type ='table' AND name NOT LIKE 'sqlite_%'
+        `).all().map(row => row.name);
+    }
 }
 
 export default ModelFactory;
