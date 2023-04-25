@@ -420,64 +420,33 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         });
     });
 
-    // describe("invoking #all without parameters retrieves all rows ", function () {
-    //     before(function () {
-    //         try {
-    //             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
-    //             this.classes = this.factory.createClasses(models);
-    //             this.classes.Cred.dropTables();
-    //             this.classes.Game.dropTables();    
+    describe("invoking #all without parameters retrieves all rows ", function () {
+        before(function () {
+            try {
+                this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+                this.classes = this.factory.createClasses(models);
+
+                this.factory.prepare(`DELETE FROM cred_friends`).run();
+                this.factory.prepare(`DELETE FROM cred`).run();
+                this.factory.prepare(`DELETE FROM game`).run();
                 
-    // console.log(this.factory.tables());
-                
-    //             this.classes.Game.createTables();
-    //             this.classes.Cred.createTables();
-    //             this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
-    //             this.wednesday = new this.classes.Cred({ username: "wednesday", email: "wednesday@adams.com" });
-    //             this.gomez = new this.classes.Cred({ username: "gomez", email: "gomez@adams.com" });
-    //         } catch (err) {
-    //             console.log(err);
-    //         }
-    //     });
+                this.classes.Game.createTables();
+                this.classes.Cred.createTables();
+                this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
+                this.wednesday = new this.classes.Cred({ username: "wednesday", email: "wednesday@adams.com" });
+                this.gomez = new this.classes.Cred({ username: "gomez", email: "gomez@adams.com" });
+            } catch (err) {
+                console.log(err);
+            }
+        });
 
-    //     after(function () {
-    //         this.factory.close();
-    //     });
+        after(function () {
+            this.factory.close();
+        });
 
-    //     it("calling #all retrieves all 3 entries", function () {
-    //         const all = this.classes.Cred.all();
-    //         assert.strictEqual(all.length, 3);
-    //     });
-    // });
-
-    // describe("#dropTables", function () {
-    //     before(function () {
-    //         try {
-    //             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
-    //             this.classes = this.factory.createClasses(models);
-                
-    //             this.classes.Game.createTables();
-    //             this.classes.Cred.createTables();
-
-    //             this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
-    //             this.wednesday = new this.classes.Cred({ username: "wednesday", email: "wednesday@adams.com" });
-    //             this.gomez = new this.classes.Cred({ username: "gomez", email: "gomez@adams.com" });
-                
-    //             this.classes.Game.dropTables();
-    //             this.classes.Cred.dropTables();
-    //         } catch (err) {
-    //             console.log(err);
-    //         }
-    //     });
-
-    //     after(function () {
-    //         this.factory.close();
-    //     });
-
-    //     it("calling #all retrieves all 3 entries", function () {
-    //         console.log(this.factory.prepare(".tables"));
-    //         // const all = this.classes.Cred.all();
-    //         // assert.strictEqual(all.length, 3);
-    //     });
-    // });    
+        it("calling #all retrieves all 3 entries", function () {
+            const all = this.classes.Cred.all();
+            assert.strictEqual(all.length, 3);
+        });
+    });
 });

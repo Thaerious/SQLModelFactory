@@ -235,24 +235,5 @@ export default function classFactory(factory, tableName, model) {
             }
             return array;
         }
-
-        static dropTables() {
-            for (const tableName of this.tables()) {
-                this.factory.prepare(`
-                    DROP TABLE IF EXISTS ${tableName}
-                `).run();
-            }
-        }
-
-        static tables() {
-            const tables = [this.tableName];
-            for (const key of Object.keys(this.model)) {
-                if (Array.isArray(model[key])) {
-                    let arrayTableName = `${tableName}_${key}`;
-                    tables.unshift(arrayTableName);
-                }
-            }
-            return tables;
-        }
     }
 }
