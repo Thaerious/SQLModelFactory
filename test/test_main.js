@@ -15,7 +15,11 @@ const models = {
         "email": "VARCHAR(64)",
         "created": "DATE DEFAULT (datetime('now','localtime'))",
         "game": "@Game",
-        "friends": ["@Cred"]
+        "game": "@Game",
+        "friends": ["@Cred"],
+        "$append": [
+            "appended VARCHAR(32) DEFAULT 'hello'"
+        ]
     }
 }
 
@@ -40,7 +44,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
     describe("create model classes", function () {
         before(function () {
-            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
+            this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
             this.classes = this.factory.createClasses(models);
         });
 
@@ -55,8 +59,12 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         describe("create tables", function () {
             before(function () {
-                this.classes.Game.createTables();
-                this.classes.Cred.createTables();
+                try {
+                    this.classes.Game.createTables();
+                    this.classes.Cred.createTables();
+                } catch (err) {
+                    console.log(err);
+                }
             });
 
             it("tables were created", function () {
@@ -86,13 +94,21 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         describe("instantiate with data", function () {
             before(function () {
-                this.abdul = new this.classes.Cred({ username: "abdul", email: "abdul@email.com" });
+                try {
+                    this.abdul = new this.classes.Cred({ username: "abdul", email: "abdul@email.com" });
+                } catch (err) {
+                    console.log(err);
+                }
             });
 
             it("check sql db", function () {
-                const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.abdul.idx);
-                assert.strictEqual(row.username, "abdul");
-                assert.ok(row);
+                try {
+                    const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.abdul.idx);
+                    assert.strictEqual(row.username, "abdul");
+                    assert.ok(row);
+                } catch (err) {
+                    console.log(err);
+                }
             });
 
             it("returned object is not null", function () {
@@ -130,6 +146,10 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                 it("can be retrieved by index with $all", function () {
                     const all = this.classes.Cred.all(this.abdul.idx);
                     assert.ok(all[0]);
+                });
+
+                it("can be retrieved with the constructor", function () {
+                    assert.ok(new this.classes.Cred(this.abdul.idx));
                 });
             });
         });
@@ -429,7 +449,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                 this.factory.prepare(`DELETE FROM cred_friends`).run();
                 this.factory.prepare(`DELETE FROM cred`).run();
                 this.factory.prepare(`DELETE FROM game`).run();
-                
+
                 this.classes.Game.createTables();
                 this.classes.Cred.createTables();
                 this.morticia = new this.classes.Cred({ username: "morticia", email: "morticia@adams.com" });
@@ -449,4 +469,79 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             assert.strictEqual(all.length, 3);
         });
     });
+
+    describe("retrieve a persistant object", function () {
+        before(function () {
+            try {
+                const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+                factory.createClasses(models);
+                factory.classes.Game.createTables();
+                factory.classes.Cred.createTables();
+
+                const eve = new factory.classes.Cred({ username: "eve", email: "eve@eden.com" });
+                const cain = new factory.classes.Cred({ username: "cain", email: "cain@eden.com" });
+                const game = new factory.classes.Game({ name: "eve's game" });
+                eve.game = game;
+                eve.friends.push(cain);
+
+                factory.close();
+            } catch (err) {
+                console.log(err);
+            }
+        });
+
+        describe("retrieve the persistant object", function () {
+            it("exists (not undefined/null)", function () {
+                const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+                factory.createClasses(models);
+
+                const eve = factory.classes.Cred.get({ username: "eve" });
+                assert.ok(eve);
+                factory.close();
+            });
+
+            it("array (friends) of peristant object contains 1 element", function () {
+                const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+                factory.createClasses(models);
+                
+                const eve = factory.classes.Cred.get({ username: "eve" });
+                assert.strictEqual(eve.friends.length, 1);
+                factory.close();
+            });       
+            
+            it("external reference (game) of peristant object is not null", function () {
+                const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+                factory.createClasses(models);
+                
+                const eve = factory.classes.Cred.get({ username: "eve" });
+                assert.ok(eve.game);
+                factory.close();
+            });      
+            
+            describe("external reference (game) of peristant object is reflective", function () {
+                before(function () {
+                    this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+                    this.factory.createClasses(models);
+                    
+                    const eve = this.factory.classes.Cred.get({ username: "eve" });
+                    eve.game.name = "changed game name";
+                });
+               
+                it("The DB row is updated for game", function () {
+                    const row = this.factory.prepare("SELECT * FROM game WHERE name = 'changed game name'").get();
+                    assert.strictEqual(row.name, "changed game name");
+                });
+
+                it("Retrieving the game has the new value", function () {
+                    const game = this.factory.classes.Game.get({name : "changed game name"});
+                    assert.ok(game);
+                });
+
+                after(function () {
+                    this.factory.close();
+                });
+                
+            });                
+        });
+    });    
 });

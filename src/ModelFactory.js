@@ -57,14 +57,6 @@ class ModelFactory {
         }
         return this.classes;
     }   
-
-    tables() {
-        return ModelFactory.instance().prepare(`
-            SELECT name FROM sqlite_schema
-            WHERE 
-            type ='table' AND name NOT LIKE 'sqlite_%'
-        `).all().map(row => row.name);
-    }
 }
 
 export default ModelFactory;

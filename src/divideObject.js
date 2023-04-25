@@ -22,6 +22,7 @@ function divideObject(object) {
     };
 
     for (const key of Object.keys(object)) {
+        if (key.startsWith("$")) continue;
         divided.keys.push(key);
         divided.values.push(object[key]);
     }

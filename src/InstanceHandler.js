@@ -66,6 +66,7 @@ export default class InstanceHandler {
 
     delete() {
         for (const key of Object.keys(this.$model)) {
+            if (key.startsWith("$")) continue;
             if (Array.isArray(this.$model[key])) {
                 const childModel = this.$model[key];
                 const childTableName = childModel?.$table ? `${this.$tableName}_${childModel.$table}` : `${this.$tableName}_${key}`

@@ -42,7 +42,7 @@ export default function classFactory(factory, tableName, model) {
 
             if (!row) throw new ClassFactoryError(this.idx);
 
-            return this.constructor._proxyIf(row, this);
+            return this.constructor._doProxy(row, this);
         }
 
         /**
@@ -167,9 +167,7 @@ export default function classFactory(factory, tableName, model) {
          * Returns the stored object if the index (row.idx) has been used previously.
          * Otherwise, returns a new object.
          */
-        static _proxyIf(row, target) {
-            if (this.instantiated.has(row.idx)) return this.instantiated.get(row.idx);
-
+        static _doProxy(row, target) {
             Object.assign(target, row);
             Object.assign(target, this._arrayify(row.idx));
             Object.assign(target, this._deReference(row));
@@ -186,9 +184,10 @@ export default function classFactory(factory, tableName, model) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
+                if (key.startsWith("$")) continue;
                 if (Array.isArray(this.model[key])) {
                     const childModel = this.model[key];
-                    const childTableName = childModel?.$table ? `${this.tableName}_${childModel.$table}` : `${this.tableName}_${key}`
+                    const childTableName = `${this.tableName}_${key}`;
                     const array = this._loadArray(idx, childTableName);
 
                     const ahnd = new ArrayInstanceHandler(this.factory, idx, childTableName, this.model[key], this.instantiated);
@@ -230,7 +229,7 @@ export default function classFactory(factory, tableName, model) {
             `).all(ridx);
 
             for (const row of all) {
-                array[row.idx] = row;
+                array[row.aidx] = row;
                 this._arrayify(row.idx);
             }
             return array;
