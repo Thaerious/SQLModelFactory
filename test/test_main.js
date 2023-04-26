@@ -380,7 +380,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
     describe("retrieve singlton instance", function () {
         before(function () {
-            this.factory = ModelFactory.instance(DBPATH, { /*verbose: console.log*/ });
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
         });
 
         after(function () {
@@ -395,7 +395,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
     describe("Model factory catches SQL errors as ModelFactoryError", function () {
         before(function () {
-            this.factory = ModelFactory.instance(DBPATH, { /*verbose: console.log*/ });
+            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
         });
 
         after(function () {

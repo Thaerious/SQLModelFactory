@@ -15,23 +15,32 @@ class ModelFactoryError extends Error{
  */
 class ModelFactory {
     constructor(dbFile, sqlOptions) {
-        this.dbFile = dbFile;
-        this.sqlOptions = sqlOptions;
+        this._dbFile = dbFile;
+        this._sqlOptions = sqlOptions;
         this.classes = {};
     }
 
-    static instance(dbFile, sqlOptions = {}) {
-        if (!this._instance) {
-            this._instance = new ModelFactory(dbFile, sqlOptions);
-        }
-        return this._instance;
+    set dbFile(value) {
+        this._dbFile = value;
+    }
+
+    set options(value) {
+        this._sqlOptions = value;
+    }
+
+    get dbFile() {
+        return this._dbFile;
+    }
+
+    get options() {
+        return this._sqlOptions;
     }
 
     prepare(expression) {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
 
-            this.sq3 = new sqlite3(this.dbFile, this.sqlOptions);
+            this.sq3 = new sqlite3(this._dbFile, this._sqlOptions);
             this.sq3.pragma('journal_mode = WAL');
             const statement = this.sq3.prepare(expression);
             return statement;
