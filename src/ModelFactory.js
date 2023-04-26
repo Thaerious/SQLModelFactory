@@ -52,6 +52,7 @@ class ModelFactory {
     close() {
         if (!this.sq3) return;
         this.sq3.close();
+        delete this.sq3;
     }
 
     /**
