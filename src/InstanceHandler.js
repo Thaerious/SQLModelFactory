@@ -1,3 +1,5 @@
+import {extractReference, hasReference} from "./extractReference.js";
+
 /**
  * Handles the storage and retrieval of instanced data.
  */
@@ -37,9 +39,9 @@ export default class InstanceHandler {
      * Handles setting and storing values. If the property is in the schema than data is store
      * in the db, otherwise the properties only exist on the object.
      */
-    set(target, prop, value) {        
+    set(target, prop, value) {       
         if (this.model.hasOwnProperty(prop)) {
-            if (this.model[prop].startsWith("@")) {
+            if (hasReference(this.model[prop])){
                 this._setRef(prop, value);
             } else {
                 this._setVal(prop, value);

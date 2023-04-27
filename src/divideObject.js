@@ -1,3 +1,5 @@
+import {extractReference, hasReference} from "./extractReference.js";
+
 /**
  * Takes an object and divides it into keys, values, and placeholders for use in SQL statements.
  * 
@@ -15,7 +17,7 @@
  *     `SELECT * FROM table WHERE ${div.where}`
  * ).all(div.values);
  */
-function divideObject(object) {
+function divideObject(object, model = {}) {
     const divided = {
         keys: [],
         values: []
@@ -24,7 +26,12 @@ function divideObject(object) {
     for (const key of Object.keys(object)) {
         if (key.startsWith("$")) continue;
         divided.keys.push(key);
-        divided.values.push(object[key]);
+
+        if (hasReference(model[key])) {
+            divided.values.push(object[key].idx);
+        } else {
+            divided.values.push(object[key]);
+        }
     }
 
     divided.where = where(divided.keys);

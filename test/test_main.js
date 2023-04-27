@@ -15,7 +15,6 @@ const models = {
         "email": "VARCHAR(64)",
         "created": "DATE DEFAULT (datetime('now','localtime'))",
         "game": "@Game",
-        "game": "@Game",
         "friends": ["@Cred"],
         "$append": [
             "appended VARCHAR(32) DEFAULT 'hello'"
@@ -166,6 +165,21 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             it("check sql db", function () {
                 const row = this.factory.prepare("SELECT * FROM cred WHERE idx = ?").get(this.noname.idx);
                 assert.ok(row);
+            });
+        });
+
+        describe("intatiante with foreign reference data", function () {
+            before(function () {
+                const game = new this.classes.Game({ name: "monica's game"});
+                this.monica = new this.classes.Cred({
+                    username: "monica",
+                    email: "monica@email.com",
+                    game: game
+                });
+            });
+
+            it("returned object is not null", function () {
+                assert.ok(this.monica);
             });
         });
     });
@@ -503,45 +517,45 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             it("array (friends) of peristant object contains 1 element", function () {
                 const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
                 factory.createClasses(models);
-                
+
                 const eve = factory.classes.Cred.get({ username: "eve" });
                 assert.strictEqual(eve.friends.length, 1);
                 factory.close();
-            });       
-            
+            });
+
             it("external reference (game) of peristant object is not null", function () {
                 const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
                 factory.createClasses(models);
-                
+
                 const eve = factory.classes.Cred.get({ username: "eve" });
                 assert.ok(eve.game);
                 factory.close();
-            });      
-            
+            });
+
             describe("external reference (game) of peristant object is reflective", function () {
                 before(function () {
                     this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
                     this.factory.createClasses(models);
-                    
+
                     const eve = this.factory.classes.Cred.get({ username: "eve" });
                     eve.game.name = "changed game name";
                 });
-               
+
                 it("The DB row is updated for game", function () {
                     const row = this.factory.prepare("SELECT * FROM game WHERE name = 'changed game name'").get();
                     assert.strictEqual(row.name, "changed game name");
                 });
 
                 it("Retrieving the game has the new value", function () {
-                    const game = this.factory.classes.Game.get({name : "changed game name"});
+                    const game = this.factory.classes.Game.get({ name: "changed game name" });
                     assert.ok(game);
                 });
 
                 after(function () {
                     this.factory.close();
                 });
-                
-            });                
+
+            });
         });
-    });    
+    });
 });

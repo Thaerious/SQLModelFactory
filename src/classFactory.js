@@ -22,7 +22,7 @@ export default function classFactory(factory, tableName, model) {
                 this.idx = args[0];
                 if (this.constructor.instantiated.has(this.idx)) return this.constructor.instantiated.get(this.idx);
             } else {
-                const div = divideObject(args[0] ?? {});
+                const div = divideObject(args[0] ?? {}, this.constructor.model);
 
                 if (!args[0]) {
                     this.idx = this.constructor.factory.prepare(
