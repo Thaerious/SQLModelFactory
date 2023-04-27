@@ -21,10 +21,12 @@ class ModelFactory {
     }
 
     set dbFile(value) {
+        this.close();
         this._dbFile = value;
     }
 
     set options(value) {
+        this.close();
         this._sqlOptions = value;
     }
 
