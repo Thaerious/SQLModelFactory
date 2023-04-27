@@ -199,10 +199,6 @@ export default function classFactory(factory, tableName, model) {
             return data;
         }
 
-        /**
-         * Replace referenced tables (@table) with Integer key and insert
-         * a foreign key constraint.
-         */
         static _deReference(row) {
             const data = {};
 
@@ -210,6 +206,7 @@ export default function classFactory(factory, tableName, model) {
                 if (this.model[key][0] === '@' && row[key]) {
                     const className = this.model[key].substring(1);
                     const aClass = this.factory.classes[className];
+                    if (!aClass) throw new Error(`Unknown class reference: ${className}`);
                     data[key] = aClass.get(row[key]);
                 }
             }
