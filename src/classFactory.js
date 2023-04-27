@@ -2,6 +2,7 @@ import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import validateColumnNames from "./validateColumnNames.js";
+import {extractReference, hasReference} from "./extractReference.js";
 
 class ClassFactoryError extends Error {
     constructor(index) {
@@ -71,10 +72,10 @@ export default function classFactory(factory, tableName, model) {
                 if (key === "$append") {
                     for (const v of model[key]) fields.push(v);
                 }
-                else if (model[key][0] === '@') {
-                    const foreignName = model[key].substring(1).toLowerCase();
-                    fields.push(`${key} Integer`);
-                    append.push(`FOREIGN KEY (${key}) REFERENCES ${foreignName} (idx)`);
+                else if (hasReference(model[key])) {
+                    const extract = extractReference(key, model[key]);
+                    fields.push(`${key} ${extract.column}`);
+                    append.push(extract.foreignKey);
                 }
                 else if (Array.isArray(model[key])) {
                     let arrayModel = model[key][0];
@@ -199,7 +200,8 @@ export default function classFactory(factory, tableName, model) {
         }
 
         /**
-         * Fills all referenced fields with an instatiated object.
+         * Replace referenced tables (@table) with Integer key and insert
+         * a foreign key constraint.
          */
         static _deReference(row) {
             const data = {};
