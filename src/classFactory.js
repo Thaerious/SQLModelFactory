@@ -2,7 +2,7 @@ import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import validateColumnNames from "./validateColumnNames.js";
-import {extractReference, hasReference} from "./extractReference.js";
+import { extractReference, hasReference } from "./extractReference.js";
 
 class ClassFactoryError extends Error {
     constructor(index) {
@@ -207,7 +207,7 @@ export default function classFactory(factory, tableName, model) {
         static _deReference(row) {
             const data = {};
 
-            for (const key of Object.keys(this.model)) {                
+            for (const key of Object.keys(this.model)) {
                 if (hasReference(this.model[key]) && row[key]) {
                     const extract = extractReference(key, this.model[key]);
                     const aClass = this.factory.classes[extract.className];
