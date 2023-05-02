@@ -134,7 +134,14 @@ export default function classFactory(factory, tableName, model) {
             `).get(div.values);
 
             if (!row) return undefined;
-            return new this.prototype.constructor(row.idx);
+
+            if (this.instantiated.has(row.idx)) {
+                return this.instantiated.get(row.idx);
+            }
+            
+            return this._doProxy(row, Object.create(this.prototype));
+
+            // return new this.prototype.constructor(row.idx);
         }
 
         /**
