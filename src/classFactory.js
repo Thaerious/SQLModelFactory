@@ -106,8 +106,8 @@ export default function classFactory(factory, tableName, model) {
                 tableName,
                 [
                     `aidx VARCHAR(64)`, // array index (in js object)
-                    `ridx Integer`,     // parent/root index (what is referring)
-                    `oidx Integer`,     // object index (what is referred to)
+                    `ridx INTEGER`,     // parent/root index (what is referring)
+                    `oidx INTEGER`,     // object index (what is referred to)
                 ],
                 [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx)`]
             );
