@@ -2,7 +2,7 @@ import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import validateColumnNames from "./validateColumnNames.js";
-import {extractReference, hasReference} from "./extractReference.js";
+import { extractReference, hasReference } from "./extractReference.js";
 
 class ClassFactoryError extends Error {
     constructor(index) {
@@ -199,14 +199,19 @@ export default function classFactory(factory, tableName, model) {
             return data;
         }
 
+        /**
+         * For each key in the model:
+         *   If the column descriptor is a foreign reference AND the row has a value for that key
+         *     Instatiate the foreign object from the database and assign it to the POJO (data).
+         */
         static _deReference(row) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
-                if (this.model[key][0] === '@' && row[key]) {
-                    const className = this.model[key].substring(1);
-                    const aClass = this.factory.classes[className];
-                    if (!aClass) throw new Error(`Unknown class reference: ${className}`);
+                if (hasReference(this.model[key]) && row[key]) {
+                    const extract = extractReference(key, this.model[key]);
+                    const aClass = this.factory.classes[extract.className];
+                    if (!aClass) throw new Error(`Unknown class reference: ${extract.className}`);
                     data[key] = aClass.get(row[key]);
                 }
             }

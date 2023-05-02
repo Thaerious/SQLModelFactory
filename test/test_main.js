@@ -179,6 +179,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
             });
 
             it("returned object is not null", function () {
+                assert.strictEqual(this.monica.game.name, "monica's game");
                 assert.ok(this.monica);
             });
         });

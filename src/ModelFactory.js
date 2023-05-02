@@ -20,6 +20,17 @@ class ModelFactory {
         this.classes = {};
     }
 
+    static get instance() {
+        if (!this._instance) {
+            this._instance = new ModelFactory();
+        }
+        return this._instance;
+    }
+
+    static set instance(value) {
+        this._instance = value;
+    }
+
     set dbFile(value) {
         this.close();
         this._dbFile = value;
