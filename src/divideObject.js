@@ -1,7 +1,9 @@
-import {extractReference, hasReference} from "./extractReference.js";
+import { hasReference } from "./extractReference.js";
 
 /**
- * Takes an object and divides it into keys, values, and placeholders for use in SQL statements.
+ * Divide an object into keys, values, and placeholders for use in SQL statements.
+ * 
+ * If any of the values of the object is an object with an idx field, the idx field is used instead.
  * 
  * keys: comma delimted string of column names
  * values: array of values
@@ -27,7 +29,7 @@ function divideObject(object, model = {}) {
         if (key.startsWith("$")) continue;
         divided.keys.push(key);
 
-        if (hasReference(model[key])) {
+        if (typeof object[key] === "object") {
             divided.values.push(object[key].idx);
         } else {
             divided.values.push(object[key]);
@@ -50,4 +52,4 @@ function where(keys) {
     return array.join(" AND ");
 }
 
-export default divideObject ;
+export default divideObject;

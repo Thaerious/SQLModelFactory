@@ -1,4 +1,12 @@
-function extractReference (key, value) {
+
+/**
+ * Find the reference value (starts with @) from within 'value'.
+ * Returns : {
+ *     column : the column descriptor for an sql create statement
+ *     foreignKey : the foreign key descriptor for an sql create statement
+ *     className : the class name extracted from value (sans @)
+ */
+function extractReference(key, value) {
     const extract = /@[a-zA-Z0-9_]+/.exec(value);
     
     if (!extract) return {
