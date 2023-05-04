@@ -20,12 +20,10 @@ const models = {
 const DBPATH = mkdirif("test", "assets", "test.db");
 const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
 const { Game, Cred } = factory.createClasses(models);
-Game.createTables();
-Cred.createTables();
+factory.createTables();
 
 class XCred extends Cred {
-    constructor(username, email) {
-        
+    constructor(username, email) {        
         return super({ username : username, email : email });
     }
 }

@@ -49,6 +49,13 @@ class ModelFactory {
         return this._sqlOptions;
     }
 
+    createTables() {
+        for (const aClass of this.classes) {
+            console.log(aClass);
+            aClass.createTables();
+        }
+    }
+
     prepare(expression) {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
