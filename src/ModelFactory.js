@@ -14,7 +14,7 @@ class ModelFactoryError extends Error{
  * write and store values for future reads.
  */
 class ModelFactory {
-    constructor(dbFile, sqlOptions) {
+    constructor(dbFile, sqlOptions = {}) {
         this._dbFile = dbFile;
         this._sqlOptions = sqlOptions;
         this.classes = {};
