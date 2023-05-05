@@ -2,16 +2,11 @@ import sqlifyList from "./sqlifyList.js";
 import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
-import { extractReference, hasReference } from "./extractReference.js";
-
-class ClassFactoryError extends Error {
-    constructor(index) {
-        super(`Unknown index ${index}`);
-    }
-}
+import { extractClass, hasReference, classNameFromModel } from "./extractClass.js";
 
 /**
- * Create a list of key-value pairs from object for which model has a matching key.
+ * Create a list of key-value pairs from object for which the model has a matching key.
+ * Keys not in the model are ignored.
  */
 function listify(object, model) {
     const list = [];
@@ -23,16 +18,17 @@ function listify(object, model) {
     return list;
 }
 
-function seekReflected(list, factory) {
-    const next = [];
+/**
+ * Remove values from any array fields and return them in a seperate array.
+ * These need to be built after the object because the root index is needed to store them.
+ * See: #processDeferred
+ */
+function extractArrays(list) {
+    const noArray = [];
     const deferred = [];
 
-    for (const data of list) {
-        if (typeof data.value !== "object") {
-            next.push(data);
-            continue;
-        }
-
+    for (const i in list) {
+        const data = list[i];
         if (Array.isArray(data.value)) {
             for (const i in data.value) {
                 deferred.push({
@@ -42,11 +38,28 @@ function seekReflected(list, factory) {
                     index: i
                 });
             }
+        } else {
+            noArray.push(data);
+        }
+    }
+
+    return { noArray, deferred };
+}
+
+/**
+ * Replace reflected objects with their index value.
+ */
+function seekReflected(list, factory) {
+    const next = [];
+
+    for (const data of list) {
+        if (typeof data.value !== "object") {
+            next.push(data);
             continue;
         }
 
-        const className = extractReference(data.key, data.model).className;
-        if (data.value.constructor === factory.classes[className]) {
+        const className = classNameFromModel(data.model);
+        if (factory.isReflective(data.value)) {
             next.push({ key: data.key, value: data.value.idx, model: data.model });
         } else {
             const instance = new factory.classes[className](data.value);
@@ -54,7 +67,7 @@ function seekReflected(list, factory) {
         }
     }
 
-    return { next, deferred };
+    return next;
 }
 
 function processDeferred(deferred, target) {
@@ -72,7 +85,7 @@ export default function classFactory(factory, name, model) {
         static name = name;
 
         constructor(...args) {
-            if (!args[0]) {
+            if (!args[0] || Object.keys(args[0]).length === 0) {
                 this.idx = this.constructor.factory.prepare(
                     `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`
                 ).run().lastInsertRowid;
@@ -82,9 +95,10 @@ export default function classFactory(factory, name, model) {
         }
 
         _constructFromData(source) {
-            let list = listify(source, this.constructor.model);
-            const seek = seekReflected(list, this.constructor.factory);
-            const div = sqlifyList(seek.next);
+            const list = listify(source, this.constructor.model);
+            const { noArray, deferred } = extractArrays(list);
+            const seek = seekReflected(noArray, this.constructor.factory);
+            const div = sqlifyList(seek);
 
             this.idx = this.constructor.factory.prepare(`
                 INSERT INTO ${this.constructor.tableName}
@@ -93,7 +107,7 @@ export default function classFactory(factory, name, model) {
             `).run(div.values).lastInsertRowid;
 
             const proxy = this.constructor._doProxy(this, this.idx);
-            processDeferred(seek.deferred, proxy);
+            processDeferred(deferred, proxy);
 
             return proxy;
         }
@@ -125,7 +139,7 @@ export default function classFactory(factory, name, model) {
                     for (const v of model[key]) fields.push(v);
                 }
                 else if (hasReference(model[key])) {
-                    const extract = extractReference(key, model[key]);
+                    const extract = extractClass(key, model[key]);
                     fields.push(`${key} ${extract.column}`);
                     append.push(extract.foreignKey);
                 }
@@ -186,6 +200,11 @@ export default function classFactory(factory, name, model) {
             `).get(div.values);
 
             if (!row) return undefined;
+
+            if (this.instantiated.has(row.idx)) {
+                return this.instantiated.get(row.idx);
+            }
+
             return this._doProxy(Object.create(this.prototype), row.idx);
         }
 
@@ -216,7 +235,6 @@ export default function classFactory(factory, name, model) {
                 `).all().map(row => this.get(row.idx));
             } else {
                 const div = divideObject(conditions);
-                validateColumnNames(this.model, div.keys);
                 return this.factory.prepare(`
                     SELECT * FROM  ${this.tableName} WHERE ${div.where}
                 `).all(div.values).map(row => this.get(row.idx));
@@ -272,10 +290,8 @@ export default function classFactory(factory, name, model) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
-                if (hasReference(this.model[key]) && row[key]) {
-                    const extract = extractReference(key, this.model[key]);
-                    const aClass = this.factory.classes[extract.className];
-                    if (!aClass) throw new Error(`Unknown class reference: ${extract.className}`);
+                if (hasReference(this.model[key]) && row[key]) {               
+                    const aClass = this.factory.getClass(this.model[key]);
                     data[key] = aClass.get(row[key]);
                 }
             }

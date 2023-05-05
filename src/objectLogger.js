@@ -4,6 +4,7 @@ export default function objectLogger(obj) {
 }
 
 function doFormat(obj, builder = [], depth = 0, ref = [], isRef = [], symbol = ['{', '}']) {
+    if (!obj) return;
     ref.push(obj);
     
     let keys = [];

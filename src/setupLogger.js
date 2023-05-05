@@ -1,5 +1,4 @@
 import Logger, { colorize, position} from "@thaerious/logger";
-import { mkdirif } from "@thaerious/utility";
 import FS from "fs";
 import ParseArgs from "@thaerious/parseargs";
 import sqlLogger from "./sqlLogger.js";
@@ -17,11 +16,6 @@ const options = {
 
 const args = new ParseArgs(options);
 const logger = new Logger();
-
-const fileLogger = (value) => {
-    FS.appendFileSync(logFilename(), new Date().toLocaleTimeString() + " " + value + "\n");
-    return value;
-}
 
 logger.standard.enabled = true;
 logger.error.enabled = true;
@@ -45,13 +39,10 @@ logger.error.handlers = [
     console
 ];
 
-// FS.appendFileSync(logFilename(), `${new Date().toLocaleTimeString()}  \n`);
-// FS.appendFileSync(logFilename(), error.stack);
-
-
 logger.log.handlers = [
+    objectLogger,
     position,
-    fileLogger,
+    colorize,
     console
 ];
 
@@ -63,6 +54,7 @@ logger.verbose.handlers = [
 ];
 
 logger.veryverbose.handlers = [
+    objectLogger,
     position,
     colorize,
     console

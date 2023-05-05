@@ -358,7 +358,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
         });
     });
 
-    describe("add un-reflected object to array field", function () {
+    describe("add primative vlaue to array field", function () {
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
             this.classes = this.factory.createClasses(models);
@@ -428,32 +428,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
             assert.ok(caughtError);
         });
-    });
-
-    describe("#ClassFactoryError : Retrieving an unknown index with the constructor throws an Error", function () {
-        before(function () {
-            this.factory = new ModelFactory(DBPATH, { /*verbose: console.log*/ });
-            this.classes = this.factory.createClasses(models);
-            this.classes.Game.createTables();
-            this.classes.Cred.createTables();
-        });
-
-        after(function () {
-            this.factory.close();
-        });
-
-        it("throws the error", function () {
-            let caughtError = null;
-
-            try {
-                new this.classes.Cred(99);
-            } catch (err) {
-                caughtError = err;
-            }
-
-            assert.ok(caughtError);
-        });
-    });
+    });   
 
     describe("invoking #all without parameters retrieves all rows ", function () {
         before(function () {

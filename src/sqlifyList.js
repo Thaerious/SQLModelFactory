@@ -1,4 +1,4 @@
-import { hasReference, extractReference } from "./extractReference.js";
+import { hasReference, extractClass } from "./extractClass.js";
 
 /**
  * Divide an object into keys, values, and placeholders for use in SQL statements.

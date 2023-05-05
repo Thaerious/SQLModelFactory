@@ -4,6 +4,7 @@ import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
 import fs from "fs";
 import divideObject from "../src/divideObject.js";
+import logger from "../src/setupLogger.js";
 
 const args = new ParseArgs().run();
 
@@ -28,22 +29,13 @@ const DBPATH = mkdirif("test", "assets", "test.db");
 describe("SQL Model Factory Test (test_main.js)", function () {
     before(function () {
         if (fs.existsSync(DBPATH)) {
-            console.log(`  Before: Removing database '${DBPATH}'`);
+            logger.log(`  Before: Removing database '${DBPATH}'`);
             fs.rmSync(DBPATH, { recursive: true });
         }
     });
 
-    after(function () {
-        if (!args.flags["no-clean"]) {
-            if (fs.existsSync(DBPATH)) {
-                console.log(`After: Removing database '${DBPATH}'`);
-                fs.rmSync(DBPATH, { recursive: true });
-            }
-        }
-    });
-
     before(function () {
-        this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+        this.factory = new ModelFactory(DBPATH, { /* verbose: logger.log */ });
         this.classes = this.factory.createClasses(models);
         this.classes.Game.createTables();
         this.classes.Cred.createTables();
@@ -51,6 +43,15 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
     after(function () {
         this.factory.close();
+    });
+
+    after(function () {
+        if (!args.flags["no-clean"]) {
+            if (fs.existsSync(DBPATH)) {
+                logger.log(`After: Removing database '${DBPATH}'`);
+                fs.rmSync(DBPATH, { recursive: true });
+            }
+        }
     });
 
     describe("create model classes", function () {
@@ -69,7 +70,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                     gamename: "al's game"
                 }, this.classes.Cred.model);
             } catch (error) {
-                console.log(error.cause);
+                logger.log(error.cause);
             }
         });
 
@@ -86,7 +87,6 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
         it("the object is retrieved", function () {
             const all = this.classes.Cred.all({ game: this.cred.game });
-            console.log(all);
             assert.strictEqual(all[0], this.cred);
         });
     });

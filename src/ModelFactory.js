@@ -3,7 +3,7 @@ import classFactory from "./classFactory.js";
 
 class ModelFactoryError extends Error{
     constructor(cause, expression) {
-        super('SQL prepare error', { cause });
+        super(`${cause.message}\n${expression}`, { cause });
         this.expression = expression;        
     }
 }
@@ -27,10 +27,6 @@ class ModelFactory {
         return this._instance;
     }
 
-    static set instance(value) {
-        this._instance = value;
-    }
-
     set dbFile(value) {
         this.close();
         this._dbFile = value;
@@ -39,14 +35,6 @@ class ModelFactory {
     set options(value) {
         this.close();
         this._sqlOptions = value;
-    }
-
-    get dbFile() {
-        return this._dbFile;
-    }
-
-    get options() {
-        return this._sqlOptions;
     }
 
     /**

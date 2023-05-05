@@ -1,13 +1,4 @@
 import InstanceHandler from "./InstanceHandler.js";
-import { extractReference } from "./extractReference.js";
-
-class NonReflectiveError extends Error {
-    constructor(prop, value) {
-        super("Can only assign reflected objects to a managed array");
-        this.prop = prop;
-        this.value = value;
-    }
-}
 
 class ReflectiveTypeError extends Error {
     constructor(prop, value) {
@@ -40,8 +31,11 @@ export default class ArrayInstanceHandler extends InstanceHandler {
             return this.setAndReflect(target, prop, new aClass(value));
         }
 
-        if (target.hasOwnProperty(prop)) return Reflect.set(...arguments);
-        throw new NonReflectiveError(prop, value);
+        if (prop === "length") {
+            return Reflect.set(...arguments);
+        }
+
+        throw new TypeError(`Expected 'object' found '${typeof value}'`);
     }
 
     setAndReflect(target, prop, value) {
@@ -62,8 +56,8 @@ export default class ArrayInstanceHandler extends InstanceHandler {
         if (prop in target) {
             delete target[prop];
             this.prepare(`
-                DELETE FROM ${this.tableName} WHERE aidx = ?
-            `).run(prop);
+                DELETE FROM ${this.tableName} WHERE aidx = ? AND ridx = ?
+            `).run(prop, this.idx);
             return true;
         }
     }

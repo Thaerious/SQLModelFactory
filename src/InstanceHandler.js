@@ -1,4 +1,4 @@
-import { extractReference, hasReference } from "./extractReference.js";
+import { classNameFromModel, extractClass, hasReference } from "./extractClass.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -40,19 +40,35 @@ export default class InstanceHandler {
      * in the db, otherwise the properties only exist on the object.
      */
     set(target, prop, value) {
-        if (this.model.hasOwnProperty(prop)) {
-            const ref = extractReference("", this.model[prop]);
+        if (prop === "idx") throw new TypeError(`Cannot assign to read only property ${prop}`);
 
-            if (ref.className) {
-                this._setRef(prop, value, ref.className);
-            } else {
+        if (this.model.hasOwnProperty(prop)) {
+            const ref = extractClass("", this.model[prop]);
+
+            if (typeof value !== "object") {
                 this._setVal(prop, value);
+                return Reflect.set(...arguments);
+            }
+            else if (this.factory.isReflective(value)) {
+                const aClass = this.factory.getClass(this.model[prop]);
+                if (value instanceof aClass === false) {
+                    throw new Error(`Reflective type error: expected ${aClass.name} found ${value.constructor.name}`);
+                }
+
+                this._setVal(prop, value.idx);
+                return Reflect.set(...arguments);
+            } else {
+                const aClass = this.factory.getClass(this.model[prop]);
+                const instance = new aClass(value);
+                this._setVal(prop, instance.idx);
+                return Reflect.set(target, prop, instance);
             }
         }
+
         return Reflect.set(...arguments);
     }
 
-    _setVal(prop, value) {
+    _setVal(prop, value) {        
         this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
@@ -60,24 +76,13 @@ export default class InstanceHandler {
         `).run(value);
     }
 
-    _setRef(prop, value, classname) {
-        if (value.constructor.name !== classname) {
-            value = new this.factory.classes[classname](value);
-        }
-
-        this.prepare(`
-        UPDATE ${this.tableName}
-        SET ${prop} = ?
-        WHERE idx = ${this.idx}
-    `).run(value.idx);
-    }
-
     delete() {
         for (const key of Object.keys(this.$model)) {
             if (key.startsWith("$")) continue;
             if (Array.isArray(this.$model[key])) {
                 const childModel = this.$model[key];
-                const childTableName = childModel?.$table ? `${this.$tableName}_${childModel.$table}` : `${this.$tableName}_${key}`
+                const childTableName = `${this.$tableName}_${key}`
+
                 this.$prepare(`
                     DELETE FROM ${childTableName} WHERE ridx = ?
                 `).run(this.idx);
