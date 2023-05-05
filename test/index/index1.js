@@ -1,4 +1,5 @@
-import { mkdirif } from "@thaerious/utility";import ModelFactory from "../../src/ModelFactory.js";
+import { mkdirif } from "@thaerious/utility";
+import ModelFactory from "../../src/ModelFactory.js";
 import assert from "assert";
 
 const models = {

@@ -12,6 +12,7 @@
   "type": "module",
   "homepage": "https://github.com/Thaerious/SQLModelFactory#readme",
   "dependencies": {
+    "@thaerious/logger": "^0.4.1",
     "better-sqlite-pool": "^0.3.1",
     "better-sqlite3": "^8.2.0"
   },

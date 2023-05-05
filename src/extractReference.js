@@ -1,4 +1,3 @@
-
 /**
  * Find the reference value (starts with @) from within 'value'.
  * Returns : {
@@ -10,16 +9,19 @@ function extractReference(key, value) {
     const extract = /@[a-zA-Z0-9_]+/.exec(value);
     
     if (!extract) return {
+        raw: value,
         column: value,
         foreignKey: null
     };
     
-    const columnRule = value.substring(0);
+    if (Array.isArray(value)) value = value[0];
+
     const className = extract[0].substring(1);
     const before = value.substring(0, extract.index);
     const after = value.substring(extract.index + extract[0].length);
 
     return {
+        raw: value,
         column: before + "INTEGER" + after,
         foreignKey: `FOREIGN KEY (${key}) REFERENCES ${className.toLowerCase()} (idx)`,
         className: className

@@ -1,4 +1,4 @@
-import { hasReference } from "./extractReference.js";
+import { hasReference, extractReference } from "./extractReference.js";
 
 /**
  * Divide an object into keys, values, and placeholders for use in SQL statements.
@@ -21,17 +21,27 @@ import { hasReference } from "./extractReference.js";
  */
 function divideObject(object, model = {}) {
     const divided = {
-        keys: [],
-        values: []
+        keys: [],     // keys joined
+        values: [],
+        columns: [],  // keys not joined        
     };
 
     for (const key of Object.keys(object)) {
         if (key.startsWith("$")) continue;
         divided.keys.push(key);
+        divided.columns.push(key);
 
-        if (typeof object[key] === "object") {
+        if (typeof object[key] === "object" && object[key].idx !== undefined) {            
             divided.values.push(object[key].idx);
-        } else {
+        }
+        else if (typeof object[key] === "object") {
+            divided.values.push({
+                key: key,
+                class: extractReference(key, model[key]).className,
+                value: object[key]
+            });
+        }
+        else {
             divided.values.push(object[key]);
         }
     }

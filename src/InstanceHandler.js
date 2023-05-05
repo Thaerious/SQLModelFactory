@@ -1,4 +1,4 @@
-import {extractReference, hasReference} from "./extractReference.js";
+import { extractReference, hasReference } from "./extractReference.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -39,10 +39,12 @@ export default class InstanceHandler {
      * Handles setting and storing values. If the property is in the schema than data is store
      * in the db, otherwise the properties only exist on the object.
      */
-    set(target, prop, value) {       
+    set(target, prop, value) {
         if (this.model.hasOwnProperty(prop)) {
-            if (hasReference(this.model[prop])){
-                this._setRef(prop, value);
+            const ref = extractReference("", this.model[prop]);
+
+            if (ref.className) {
+                this._setRef(prop, value, ref.className);
             } else {
                 this._setVal(prop, value);
             }
@@ -58,12 +60,16 @@ export default class InstanceHandler {
         `).run(value);
     }
 
-    _setRef(prop, value) {
+    _setRef(prop, value, classname) {
+        if (value.constructor.name !== classname) {
+            value = new this.factory.classes[classname](value);
+        }
+
         this.prepare(`
-            UPDATE ${this.tableName}
-            SET ${prop} = ?
-            WHERE idx = ${this.idx}
-        `).run(value.idx);
+        UPDATE ${this.tableName}
+        SET ${prop} = ?
+        WHERE idx = ${this.idx}
+    `).run(value.idx);
     }
 
     delete() {
@@ -82,7 +88,7 @@ export default class InstanceHandler {
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?
-        `).run(this.idx);        
+        `).run(this.idx);
     }
 
     prepare(sql) {

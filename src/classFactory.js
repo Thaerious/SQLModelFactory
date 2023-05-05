@@ -1,7 +1,7 @@
+import sqlifyList from "./sqlifyList.js";
 import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
-import validateColumnNames from "./validateColumnNames.js";
 import { extractReference, hasReference } from "./extractReference.js";
 
 class ClassFactoryError extends Error {
@@ -10,40 +10,92 @@ class ClassFactoryError extends Error {
     }
 }
 
-export default function classFactory(factory, tableName, model) {
+/**
+ * Create a list of key-value pairs from object for which model has a matching key.
+ */
+function listify(object, model) {
+    const list = [];
+    for (const key of Object.keys(object)) {
+        const value = object[key];
+        if (!model[key]) continue;
+        list.push({ key: key, value: value, model: model[key] });
+    }
+    return list;
+}
+
+function seekReflected(list, factory) {
+    const next = [];
+    const deferred = [];
+
+    for (const data of list) {
+        if (typeof data.value !== "object") {
+            next.push(data);
+            continue;
+        }
+
+        if (Array.isArray(data.value)) {
+            for (const i in data.value) {
+                deferred.push({
+                    key: data.key,
+                    value: data.value[i],
+                    model: data.model[0],
+                    index: i
+                });
+            }
+            continue;
+        }
+
+        const className = extractReference(data.key, data.model).className;
+        if (data.value.constructor === factory.classes[className]) {
+            next.push({ key: data.key, value: data.value.idx, model: data.model });
+        } else {
+            const instance = new factory.classes[className](data.value);
+            next.push({ key: data.key, value: instance.idx, model: data.model });
+        }
+    }
+
+    return { next, deferred };
+}
+
+function processDeferred(deferred, target) {
+    for (const item of deferred) {
+        target[item.key][item.index] = item.value;
+    }
+}
+
+export default function classFactory(factory, name, model) {
     return class {
         static factory = factory;
-        static tableName = tableName;
+        static tableName = name.toLowerCase();
         static instantiated = new Map();
         static model = model;
+        static name = name;
 
         constructor(...args) {
-            if (typeof args[0] === "number") {
-                this.idx = args[0];
-                if (this.constructor.instantiated.has(this.idx)) return this.constructor.instantiated.get(this.idx);
+            if (!args[0]) {
+                this.idx = this.constructor.factory.prepare(
+                    `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`
+                ).run().lastInsertRowid;
             } else {
-                const div = divideObject(args[0] ?? {}, this.constructor.model);
-
-                if (!args[0]) {
-                    this.idx = this.constructor.factory.prepare(
-                        `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`
-                    ).run().lastInsertRowid;
-                } else {
-                    this.idx = this.constructor.factory.prepare(`
-                        INSERT INTO ${this.constructor.tableName}
-                        (${div.keys})
-                        VALUES (${div.placeHolders})
-                    `).run(div.values).lastInsertRowid;
-                }
+                return this._constructFromData(args[0]);
             }
+        }
 
-            const row = this.constructor.factory.prepare(`
-                SELECT * FROM  ${this.constructor.tableName} WHERE idx = ?
-            `).get(this.idx);
+        _constructFromData(source) {
+            let list = listify(source, this.constructor.model);
+            const seek = seekReflected(list, this.constructor.factory);
+            const div = sqlifyList(seek.next);
 
-            if (!row) throw new ClassFactoryError(this.idx);
+            this.idx = this.constructor.factory.prepare(`
+                INSERT INTO ${this.constructor.tableName}
+                (${div.keys})
+                VALUES (${div.placeHolders})
+            `).run(div.values).lastInsertRowid;
 
-            return this.constructor._doProxy(row, this);
+            const proxy = this.constructor._doProxy(this, this.idx);
+            processDeferred(seek.deferred, proxy);
+
+            return proxy;
         }
 
         /**
@@ -124,24 +176,25 @@ export default function classFactory(factory, tableName, model) {
          * @param {Integer | Object} conditions - Selector for which row to retrieve.
          */
         static get(conditions) {
-            if (typeof conditions === "number") conditions = { idx: conditions };
+            if (typeof conditions === "number") {
+                return this.getByIdx(conditions);
+            }
 
             const div = divideObject(conditions);
-            validateColumnNames(this.model, div.keys);
-
             const row = this.factory.prepare(`
                 SELECT * FROM  ${this.tableName} WHERE ${div.where}
             `).get(div.values);
 
             if (!row) return undefined;
+            return this._doProxy(Object.create(this.prototype), row.idx);
+        }
 
-            if (this.instantiated.has(row.idx)) {
-                return this.instantiated.get(row.idx);
+        static getByIdx(idx) {
+            if (this.instantiated.has(idx)) {
+                return this.instantiated.get(idx);
+            } else {
+                return this.get({ idx: idx });
             }
-            
-            return this._doProxy(row, Object.create(this.prototype));
-
-            // return new this.prototype.constructor(row.idx);
         }
 
         /**
@@ -175,13 +228,18 @@ export default function classFactory(factory, tableName, model) {
          * Returns the stored object if the index (row.idx) has been used previously.
          * Otherwise, returns a new object.
          */
-        static _doProxy(row, target) {
+        static _doProxy(target, idx) {
+            const row = this.factory.prepare(`
+                SELECT * FROM  ${this.tableName} WHERE idx = ?
+            `).get(idx);
+
+            const hnd = new InstanceHandler(this.factory, row.idx, this.tableName, this.model, this.instantiated);
+            this.instantiated.set(idx, new Proxy(target, hnd));
+
             Object.assign(target, row);
             Object.assign(target, this._arrayify(row.idx));
             Object.assign(target, this._deReference(row));
 
-            const hnd = new InstanceHandler(this.factory, row.idx, this.tableName, this.model, this.instantiated);
-            this.instantiated.set(target.idx, new Proxy(target, hnd));
             return this.instantiated.get(row.idx);
         }
 
@@ -194,9 +252,8 @@ export default function classFactory(factory, tableName, model) {
             for (const key of Object.keys(this.model)) {
                 if (key.startsWith("$")) continue;
                 if (Array.isArray(this.model[key])) {
-                    const childModel = this.model[key];
                     const childTableName = `${this.tableName}_${key}`;
-                    const array = this._loadArray(idx, childTableName);
+                    const array = this._loadArray(idx, childTableName, this.model[key]);
 
                     const ahnd = new ArrayInstanceHandler(this.factory, idx, childTableName, this.model[key], this.instantiated);
                     data[key] = new Proxy(array, ahnd);
@@ -228,21 +285,23 @@ export default function classFactory(factory, tableName, model) {
 
         /**
          * Load array data from DB to object.
-         * Retrieves all data from the child talbe that matches the root object's index value.
-         * @param {Integer} ridx - The index of parent (root) object.
+         * Retrieves all data from the child table that matches the root object's index value.
+         * @param {Integer} rootIdx - The index of parent (root) object.
          * @param {String} childTableName - The name of the child table.
          */
-        static _loadArray(ridx, childTableName) {
+        static _loadArray(rootIdx, childTableName, arrayModel) {
             const array = [];
+
+            const aClass = this.factory.getClass(arrayModel);
 
             const all = this.factory.prepare(`
                 SELECT * FROM ${childTableName} WHERE ridx = ?
-            `).all(ridx);
+            `).all(rootIdx);
 
             for (const row of all) {
-                array[row.aidx] = row;
-                this._arrayify(row.idx);
+                array[row.aidx] = aClass.get(row.oidx);
             }
+
             return array;
         }
     }

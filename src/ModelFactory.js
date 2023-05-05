@@ -49,10 +49,36 @@ class ModelFactory {
         return this._sqlOptions;
     }
 
+    /**
+     * Returns true if 'object' is reflective.
+     * Reflective objects are instances of a class created by this factory,
+     * and has the 'idx' field.
+     */
+    isReflective(object) {
+        if (typeof object !== "object") return false;
+        if (typeof object.idx === "undefined") return false;    
+        
+        for (const aClass in this.classes) {
+            if (object instanceof this.classes[aClass]) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Retrieve a reflective class by name.
+     * The name can be a string or a @-prefixed string.
+     * If the string is within an array it must be an array of length 1.
+     * Returns undefined if no class found.
+     */
+    getClass(name) {
+        if (Array.isArray(name)) name = name.flat().join("");
+        if (name.startsWith("@")) name = name.substring(1);
+        return this.classes[name];
+    }
+
     createTables() {
-        for (const aClass of this.classes) {
-            console.log(aClass);
-            aClass.createTables();
+        for (const aClass in this.classes) {
+            this.classes[aClass].createTables();
         }
     }
 
@@ -83,7 +109,7 @@ class ModelFactory {
      */
     createClasses(models) {
         for (const name in models) {
-            this.classes[name] = classFactory(this, name.toLowerCase(), models[name]);
+            this.classes[name] = classFactory(this, name, models[name]);
         }
         return this.classes;
     }   
