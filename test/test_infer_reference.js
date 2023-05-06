@@ -35,11 +35,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
 
     before(function () {
         this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
-<<<<<<< HEAD
         this.classes = this.factory.createClasses(models);
-=======
-        this.classes = this.factory.createClasses(models);        
->>>>>>> 10e6947758a1f15a6488bf17323b702b8a0fa940
         this.classes.Game.createTables();
         this.classes.Cred.createTables();
     });

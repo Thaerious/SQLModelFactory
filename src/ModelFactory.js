@@ -96,8 +96,6 @@ class ModelFactory {
      * Returns undefined if no class found.
      */
     getClass(name) {
-        console.log("getClass", name);
-        console.log(name);
         if (Array.isArray(name)) name = name.flat().join("");
         if (name.startsWith("@")) name = name.substring(1);
         return this.classes[name];
