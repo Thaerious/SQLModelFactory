@@ -4,7 +4,6 @@ import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
 import fs from "fs";
 import divideObject from "../src/divideObject.js";
-import logger from "../src/setupLogger.js";
 
 const args = new ParseArgs().run();
 
@@ -29,14 +28,14 @@ const DBPATH = mkdirif("test", "assets", "test.db");
 describe("SQL Model Factory Test (test_main.js)", function () {
     before(function () {
         if (fs.existsSync(DBPATH)) {
-            logger.log(`  Before: Removing database '${DBPATH}'`);
+            console.log(`  Before: Removing database '${DBPATH}'`);
             fs.rmSync(DBPATH, { recursive: true });
         }
     });
 
     before(function () {
-        this.factory = new ModelFactory(DBPATH, { /* verbose: logger.log */ });
-        this.classes = this.factory.createClasses(models);
+        this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+        this.classes = this.factory.createClasses(models);        
         this.classes.Game.createTables();
         this.classes.Cred.createTables();
     });
@@ -48,7 +47,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
     after(function () {
         if (!args.flags["no-clean"]) {
             if (fs.existsSync(DBPATH)) {
-                logger.log(`After: Removing database '${DBPATH}'`);
+                console.log(`After: Removing database '${DBPATH}'`);
                 fs.rmSync(DBPATH, { recursive: true });
             }
         }
@@ -70,7 +69,7 @@ describe("SQL Model Factory Test (test_main.js)", function () {
                     gamename: "al's game"
                 }, this.classes.Cred.model);
             } catch (error) {
-                logger.log(error.cause);
+                console.log(error.cause);
             }
         });
 
