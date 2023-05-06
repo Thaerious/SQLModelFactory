@@ -8,7 +8,7 @@ describe("Extract Reference Test : extractClass.js", function () {
         assert.strictEqual(extract.foreignKey, "FOREIGN KEY (ref) REFERENCES table (idx)");
     });
 
-    it("Reference at beinning", function(){
+    it("Reference at beginning", function(){
         const extract = extractClass("ref", "@table NOT NULL");
         assert.strictEqual(extract.column, "INTEGER NOT NULL");
         assert.strictEqual(extract.foreignKey, "FOREIGN KEY (ref) REFERENCES table (idx)");

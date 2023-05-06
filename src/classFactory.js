@@ -194,7 +194,7 @@ export default function classFactory(factory, name, model) {
                 return this.getByIdx(conditions);
             }
 
-            const div = divideObject(conditions);
+            const div = divideObject(conditions);            
             const row = this.factory.prepare(`
                 SELECT * FROM  ${this.tableName} WHERE ${div.where}
             `).get(div.values);
@@ -290,7 +290,7 @@ export default function classFactory(factory, name, model) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
-                if (hasReference(this.model[key]) && row[key]) {               
+                if (hasReference(this.model[key]) && row[key]) {          
                     const aClass = this.factory.getClass(this.model[key]);
                     data[key] = aClass.get(row[key]);
                 }
