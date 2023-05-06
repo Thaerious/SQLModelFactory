@@ -186,4 +186,5 @@ const models = {
 
     // Construct with reflected Object
     const c13 = new Cred({ game: g3 });
+    assert.strictEqual(c13.game, g3);
 })();

@@ -27,10 +27,17 @@ function extractClass(key, value) {
     }
 }
 
-function classNameFromModel(name) {
-    if (Array.isArray(name)) name = name.flat().join("");
-    if (name.startsWith("@")) name = name.substring(1);
-    return name;
+/**
+ * Extract a class name from string.
+ * Typically the value from a model.
+ * Will flatten arrays.
+ */
+function classNameFromModel(string) {
+    if (Array.isArray(string)) string = string.flat().join("");
+
+    const extract = /@[a-zA-Z0-9_]+/.exec(string);
+    if (!extract) throw new Error(`ClassName not found: ${string}`);
+    return extract[0].substring(1);
 }
 
 function hasReference(value) {

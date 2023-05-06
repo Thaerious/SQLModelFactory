@@ -1,5 +1,7 @@
 import sqlite3 from "better-sqlite3";
 import classFactory from "./classFactory.js";
+import expandModels from "./expandModels.js";
+import { classNameFromModel } from "./extractClass.js";
 
 class ModelFactoryError extends Error {
     constructor(cause, expression) {
@@ -8,43 +10,6 @@ class ModelFactoryError extends Error {
     }
 }
 
-/**
- * Remove all nested models replacing them with declared models.
- */
-function expandModels(models) {
-    let i = 0;
-    const root = { ...models };
-
-    for (const modelName in models) {
-        const model = expandModel(modelName, models[modelName]);
-        root[modelName] = model;
-    }
-
-    return root;
-
-    function expandModel(modelName, model) {
-        const newModel = { ...model };
-
-        for (const key of Object.keys(model)) {
-            if (key.startsWith("$")) continue;
-            let value = model[key];
-            if (typeof value !== "object") continue;
-
-            if (Array.isArray(value)) {
-                value = value[0];
-                const newName = `_t${i++}`
-                newModel[key] = [`@${newName}`];
-                root[newName] = expandModel(modelName, value);
-            } else {
-                const newName = `_t${i++}`
-                newModel[key] = `@${newName}`;
-                root[newName] = expandModel(modelName, value);                
-            }
-        }
-
-        return newModel;
-    }
-}
 /**
  * This class is responsible for creating and managing database tables and their corresponding models. 
  * This class is a factory that generates classes whcih in turn use a proxy to update the tables on 
@@ -96,9 +61,8 @@ class ModelFactory {
      * Returns undefined if no class found.
      */
     getClass(name) {
-        if (Array.isArray(name)) name = name.flat().join("");
-        if (name.startsWith("@")) name = name.substring(1);
-        return this.classes[name];
+        const classname = classNameFromModel(name);
+        return this.classes[classname];
     }
 
     createTables() {
@@ -133,8 +97,9 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClasses(models) {
-        for (const name in models) {
-            this.classes[name] = classFactory(this, name, models[name]);
+        const expanded = expandModels(models);
+        for (const name in expanded) {
+            this.classes[name] = classFactory(this, name, expanded[name]);
         }
         return this.classes;
     }

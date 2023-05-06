@@ -62,8 +62,12 @@ function seekReflected(list, factory) {
         if (factory.isReflective(data.value)) {
             next.push({ key: data.key, value: data.value.idx, model: data.model });
         } else {
-            const instance = new factory.classes[className](data.value);
-            next.push({ key: data.key, value: instance.idx, model: data.model });
+            try {
+                const instance = new factory.classes[className](data.value);
+                next.push({ key: data.key, value: instance.idx, model: data.model });
+            } catch (error) {
+                throw new Error(`${error.message}\nclassName: '${className}'`, error);
+            }
         }
     }
 
@@ -290,8 +294,9 @@ export default function classFactory(factory, name, model) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
-                if (hasReference(this.model[key]) && row[key]) {          
+                if (hasReference(this.model[key]) && row[key]) {                              
                     const aClass = this.factory.getClass(this.model[key]);
+                    if (!aClass) throw new TypeError(`unknown class ${this.model[key]}`);
                     data[key] = aClass.get(row[key]);
                 }
             }
