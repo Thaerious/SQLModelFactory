@@ -59,7 +59,7 @@ function seekReflected(list, factory) {
         }
 
         const className = classNameFromModel(data.model);
-        if (factory.isReflective(data.value)) {
+        if (factory.isReflected(data.value)) {
             next.push({ key: data.key, value: data.value.idx, model: data.model });
         } else {
             try {
@@ -194,7 +194,9 @@ export default function classFactory(factory, name, model) {
          * @param {Integer | Object} conditions - Selector for which row to retrieve.
          */
         static get(conditions) {
-            
+            if (this.factory.isReflected(conditions)) {
+                return this.instantiated.get(conditions.idx);
+            }
 
             if (typeof conditions === "number") {
                 return this.getByIdx(conditions);

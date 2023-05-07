@@ -44,7 +44,7 @@ class ModelFactory {
      * Reflective objects are instances of a class created by this factory,
      * and has the 'idx' field.
      */
-    isReflective(object) {
+    isReflected(object) {
         if (!object) return false;
         if (typeof object !== "object") return false;
         if (typeof object.idx === "undefined") return false;

@@ -53,28 +53,28 @@ describe("Test is reflective method (ModelFactory.js)", function () {
 
     describe("returns false for non-objects", function () {
         it("number", function () {
-            assert.ok(!this.factory.isReflective(1));
+            assert.ok(!this.factory.isReflected(1));
         });
         it("undefined", function () {
-            assert.ok(!this.factory.isReflective(undefined));
+            assert.ok(!this.factory.isReflected(undefined));
         });        
         it("null", function () {
-            assert.ok(!this.factory.isReflective(null));
+            assert.ok(!this.factory.isReflected(null));
         });    
         it("string", function () {
-            assert.ok(!this.factory.isReflective(null));
+            assert.ok(!this.factory.isReflected(null));
         });      
         it("boolean", function () {
-            assert.ok(!this.factory.isReflective(true));
+            assert.ok(!this.factory.isReflected(true));
         });          
     });
 
     describe("returns false for pojo", function () {
         it("pojo", function () {
-            assert.ok(!this.factory.isReflective({}));
+            assert.ok(!this.factory.isReflected({}));
         });
         it("pojo with idx", function () {
-            assert.ok(!this.factory.isReflective({ idx: 1 }));
+            assert.ok(!this.factory.isReflected({ idx: 1 }));
         });                
     });    
 

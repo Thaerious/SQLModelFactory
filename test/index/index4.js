@@ -33,6 +33,6 @@ const c1 = new Cred({ username: "ed", email: "ed@there.ca" });
 const c2 = new XCred("bill", "bill@there.ca");
 const c3 = { username: "allan", email: "al@there.ca" };
 
-console.log(factory.isReflective(c1));
-console.log(factory.isReflective(c2));
+console.log(factory.isReflected(c1));
+console.log(factory.isReflected(c2));
 console.log(factory.isReflective(c3));

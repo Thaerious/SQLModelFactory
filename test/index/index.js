@@ -58,11 +58,11 @@ const models = {
     } catch { }
 
     // This is not a reflective object
-    assert.ok(!factory.isReflective({}));
+    assert.ok(!factory.isReflected({}));
 
     // This is also not a reflective object
     class Foo { constructor() { this.idx = 0; } }
-    assert.ok(!factory.isReflective(new Foo()));
+    assert.ok(!factory.isReflected(new Foo()));
 
     // You are not allowed to overwrite idx    
     try {

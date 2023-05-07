@@ -49,7 +49,7 @@ export default class InstanceHandler {
                 this._setVal(prop, value);
                 return Reflect.set(...arguments);
             }
-            else if (this.factory.isReflective(value)) {
+            else if (this.factory.isReflected(value)) {
                 const aClass = this.factory.getClass(this.model[prop]);
                 if (value instanceof aClass === false) {
                     throw new Error(`Reflective type error: expected ${aClass.name} found ${value.constructor.name}`);

@@ -19,7 +19,7 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * Handles setting and storing values in an array field.
      */
     set(target, prop, value) {
-        if (this.factory.isReflective(value)) {
+        if (this.factory.isReflected(value)) {
             const aClass = this.factory.getClass(this.model);
             if (value instanceof aClass === false) {
                 throw new ReflectiveTypeError(prop, value);
