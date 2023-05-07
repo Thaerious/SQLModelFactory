@@ -45,6 +45,7 @@ class ModelFactory {
      * and has the 'idx' field.
      */
     isReflective(object) {
+        if (!object) return false;
         if (typeof object !== "object") return false;
         if (typeof object.idx === "undefined") return false;
 

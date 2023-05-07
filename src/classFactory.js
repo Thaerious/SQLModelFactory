@@ -194,6 +194,8 @@ export default function classFactory(factory, name, model) {
          * @param {Integer | Object} conditions - Selector for which row to retrieve.
          */
         static get(conditions) {
+            
+
             if (typeof conditions === "number") {
                 return this.getByIdx(conditions);
             }
