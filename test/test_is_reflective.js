@@ -3,6 +3,7 @@ import ModelFactory from "../src/ModelFactory.js";
 import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
 import fs from "fs";
+import setupTests from "./util/setup.js";
 
 const args = new ParseArgs().run();
 
@@ -22,35 +23,7 @@ const models = {
     }
 }
 
-const DBPATH = mkdirif("test", "assets", "test.db");
-
-describe("Test is reflective method (ModelFactory.js)", function () {
-    before(function () {
-        if (fs.existsSync(DBPATH)) {
-            console.log(`  Before: Removing database '${DBPATH}'`);
-            fs.rmSync(DBPATH, { recursive: true });
-        }
-    });
-
-    before(function () {
-        this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
-        this.classes = this.factory.createClasses(models);
-        this.factory.createTables();
-    });
-
-    after(function () {
-        this.factory.close();
-    });
-
-    after(function () {
-        if (!args.flags["no-clean"]) {
-            if (fs.existsSync(DBPATH)) {
-                console.log(`After: Removing database '${DBPATH}'`);
-                fs.rmSync(DBPATH, { recursive: true });
-            }
-        }
-    });
-
+setupTests(models, "Test is ModelFactory.isReflective", function () {
     describe("returns false for non-objects", function () {
         it("number", function () {
             assert.ok(!this.factory.isReflected(1));
@@ -82,6 +55,6 @@ describe("Test is reflective method (ModelFactory.js)", function () {
         it("reflective", function () {
             assert.ok(new this.factory.classes.Cred({username : "bill"}));
         });              
-    });      
+    });       
 });
     

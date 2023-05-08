@@ -1,20 +1,44 @@
-import ModelFactory, {expandModels} from "../../src/ModelFactory.js";
+import ModelFactory, { expandModels } from "../../src/ModelFactory.js";
 import { mkdirif } from "@thaerious/utility";
 
-const models = expandModels({
-    "Game": {
-        "name": "VARCHAR(32)",
-    },
-    "Cred": {
-        "username": "VARCHAR(32)",
-        "email": "VARCHAR(64)",
-        "created": "DATE DEFAULT (datetime('now','localtime'))",
-        "game": "@Game",
-        "friends": ["@Cred"],
-        "$append": [
-            "appended VARCHAR(32) DEFAULT 'hello'"
-        ]
+const models = {
+    "GameModel": {
+        "groups": [{
+            "label": "VARCHAR(64)",
+            names: [{
+                "first": "VARCHAR(64)",
+                "last": "VARCHAR(64)"
+            }]
+        }],
     }
+}
+
+ModelFactory.instance.dbFile = "test/assets/test.db";
+ModelFactory.instance.createClasses(models);
+ModelFactory.instance.createTables();
+
+ModelFactory.instance.options = { verbose: console.log };
+
+const gm1 = new ModelFactory.instance.classes.GameModel();
+// const gm2 = new ModelFactory.instance.classes.GameModel();
+// const gm3 = new ModelFactory.instance.classes.GameModel();
+
+// const names = new ModelFactory.instance.classes._t0();
+// console.log(names);
+
+gm1.groups.push({
+    names: [
+        { "first": "bill", "last": "billers" }
+    ]
 });
- 
-console.log(models);
+
+console.log(gm1);
+console.log(gm1.groups);
+console.log(gm1.groups[0]);
+
+// console.log(gm2);
+// console.log(gm3);
+
+
+
+

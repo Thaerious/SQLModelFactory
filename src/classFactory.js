@@ -5,8 +5,9 @@ import InstanceHandler from "./InstanceHandler.js";
 import { extractClass, hasReference, classNameFromModel } from "./extractClass.js";
 
 /**
- * Create a list of key-value pairs from object for which the model has a matching key.
- * Keys not in the model are ignored.
+ * Create a list of key-value pairs of the object's fields.
+ * Only fields that are specified on the model are included.
+ * Fields not found on the model are ignored.
  */
 function listify(object, model) {
     const list = [];
@@ -19,8 +20,8 @@ function listify(object, model) {
 }
 
 /**
- * Remove values from any array fields and return them in a seperate array.
- * These need to be built after the object because the root index is needed to store them.
+ * Remove values from any array fields and return them in a seperate deferred array.
+ * These need to be built after the object because the root index needs to be known.
  * See: #processDeferred
  */
 function extractArrays(list) {
@@ -47,7 +48,7 @@ function extractArrays(list) {
 }
 
 /**
- * Replace reflected objects with their index value.
+ * Replace reflected objects in the list with their index value.
  */
 function seekReflected(list, factory) {
     const next = [];
@@ -81,6 +82,8 @@ function processDeferred(deferred, target) {
 }
 
 export default function classFactory(factory, name, model) {
+    model["$classname"] = name;
+
     return class {
         static factory = factory;
         static tableName = name.toLowerCase();
@@ -89,31 +92,42 @@ export default function classFactory(factory, name, model) {
         static name = name;
 
         constructor(...args) {
+            let deferred = [];
             if (!args[0] || Object.keys(args[0]).length === 0) {
-                this.idx = this.constructor.factory.prepare(
-                    `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`
-                ).run().lastInsertRowid;
+                // no-arg or args[0] == {}
+                this._constructDefault();
             } else {
-                return this._constructFromData(args[0]);
+                deferred = this._constructFromData(args[0]);
             }
+
+            const proxy = this.constructor._doProxy(this, this.idx);
+            processDeferred(deferred, proxy);
+            return proxy;
+        }
+
+        _constructDefault() {
+            this.idx = this.constructor.factory.prepare(
+                `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`
+            ).run().lastInsertRowid;
         }
 
         _constructFromData(source) {
             const list = listify(source, this.constructor.model);
             const { noArray, deferred } = extractArrays(list);
             const seek = seekReflected(noArray, this.constructor.factory);
-            const div = sqlifyList(seek);
 
-            this.idx = this.constructor.factory.prepare(`
+            if (seek.length === 0) {
+                this._constructDefault();
+            } else {
+                const div = sqlifyList(seek);
+
+                this.idx = this.constructor.factory.prepare(`
                 INSERT INTO ${this.constructor.tableName}
                 (${div.keys})
                 VALUES (${div.placeHolders})
             `).run(div.values).lastInsertRowid;
-
-            const proxy = this.constructor._doProxy(this, this.idx);
-            processDeferred(deferred, proxy);
-
-            return proxy;
+            }
+            return deferred;
         }
 
         /**
@@ -137,32 +151,30 @@ export default function classFactory(factory, name, model) {
         /**
         * Used internally to create the tables used by the proxies.
         */
-        static _createTable(model, tableName, fields = [], append = []) {
+        static _createTable(model, tableName, fields = [], appends = []) {
             for (const key of Object.keys(model)) {
                 if (key === "$append") {
                     for (const v of model[key]) fields.push(v);
                 }
                 else if (hasReference(model[key])) {
+                    // a known @class RHS rule
                     const extract = extractClass(key, model[key]);
                     fields.push(`${key} ${extract.column}`);
-                    append.push(extract.foreignKey);
+                    appends.push(extract.foreignKey);
                 }
                 else if (Array.isArray(model[key])) {
-                    let arrayModel = model[key][0];
-                    let arrayTableName = `${tableName}_${key}`;
-
-                    if (typeof (arrayModel) === "string") arrayModel = {};
-
-                    this._createArrayTable(arrayModel, arrayTableName, tableName);
+                    this._createArrayIndexTable(`${tableName}_${key}`, tableName);
                 }
                 else if (typeof model[key] === "string" && key[0] !== '$') {
+                    // Rule string w/o class reference (@class)
+                    if (model[key] === '@') throw new Error();
                     fields.push(`${key} ${model[key]}`);
                 }
             }
 
-            const lines = [...fields, ...append].join(",\n\t");
+            const columns = [...fields, ...appends].join(",\n\t");
 
-            const statement = this.factory.prepare(`CREATE TABLE IF NOT EXISTS ${tableName}(\n\t${lines}\n)`);
+            const statement = this.factory.prepare(`CREATE TABLE IF NOT EXISTS ${tableName}(\n\t${columns}\n)`);
             statement.run();
             return statement;
         }
@@ -170,16 +182,15 @@ export default function classFactory(factory, name, model) {
         /**
          * Used internally to create the array tables used by the proxies.
          */
-        static _createArrayTable(model, tableName, rootTable) {
+        static _createArrayIndexTable(tableName, rootTable) {
             this._createTable(
-                model,
-                tableName,
-                [
-                    `aidx VARCHAR(64)`, // array index (in js object)
-                    `ridx INTEGER`,     // parent/root index (what is referring)
-                    `oidx INTEGER`,     // object index (what is referred to)
-                ],
-                [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx)`]
+                {
+                    "aidx": "VARCHAR(64)",  // array index (in js object)
+                    "ridx": "INTEGER",       // parent/root index (what is referring)
+                    "oidx": "INTEGER",      // object index (what is referred to)
+                    "$append": [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx)`]
+                },
+                tableName
             );
         }
 
@@ -202,7 +213,7 @@ export default function classFactory(factory, name, model) {
                 return this.getByIdx(conditions);
             }
 
-            const div = divideObject(conditions);            
+            const div = divideObject(conditions);
             const row = this.factory.prepare(`
                 SELECT * FROM  ${this.tableName} WHERE ${div.where}
             `).get(div.values);
@@ -298,7 +309,7 @@ export default function classFactory(factory, name, model) {
             const data = {};
 
             for (const key of Object.keys(this.model)) {
-                if (hasReference(this.model[key]) && row[key]) {                              
+                if (hasReference(this.model[key]) && row[key]) {
                     const aClass = this.factory.getClass(this.model[key]);
                     if (!aClass) throw new TypeError(`unknown class ${this.model[key]}`);
                     data[key] = aClass.get(row[key]);

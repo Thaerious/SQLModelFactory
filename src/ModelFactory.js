@@ -19,6 +19,7 @@ class ModelFactory {
     constructor(dbFile, sqlOptions = {}) {
         this._dbFile = dbFile;
         this._sqlOptions = sqlOptions;
+        this.models = {};
         this.classes = {};
     }
 
@@ -38,6 +39,14 @@ class ModelFactory {
         this.close();
         this._sqlOptions = value;
     }
+
+    get dbFile() {
+        return this._dbFile;
+    }
+
+    get options() {
+        return this._sqlOptions;
+    }    
 
     /**
      * Returns true if 'object' is reflective.
@@ -98,9 +107,15 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClasses(models) {
-        const expanded = expandModels(models);
-        for (const name in expanded) {
-            this.classes[name] = classFactory(this, name, expanded[name]);
+        const expandedModels = expandModels(models);
+
+        this.models = {
+            ...this.models,
+            ...expandedModels
+        }
+
+        for (const name in expandedModels) {
+            this.classes[name] = classFactory(this, name, expandedModels[name]);
         }
         return this.classes;
     }
