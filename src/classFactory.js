@@ -105,6 +105,10 @@ export default function classFactory(factory, name, model) {
             return proxy;
         }
 
+        static get tableName() {
+            return this.model.$classname.toLowerCase();
+        }
+
         _constructDefault() {
             this.idx = this.constructor.factory.prepare(
                 `INSERT INTO ${this.constructor.tableName} DEFAULT VALUES`

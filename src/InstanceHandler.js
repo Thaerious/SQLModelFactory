@@ -24,15 +24,17 @@ export default class InstanceHandler {
      * the object properties are used.
      */
     get(target, prop) {
+        // '$' prefix returns fields from the handler.
         if (typeof prop === "string" && prop.startsWith("$")) {
             return Reflect.get(this, prop.substring(1));
         }
 
+        // If the property exists on the target use the target.
         if (prop in target) {
             return Reflect.get(target, prop);
         }
 
-        return Reflect.get(this, prop);
+        return Reflect.get(this, prop); // todo: look into this, should the default be return from handler and not return null/undefined?
     }
 
     /**
@@ -80,7 +82,6 @@ export default class InstanceHandler {
         for (const key of Object.keys(this.$model)) {
             if (key.startsWith("$")) continue;
             if (Array.isArray(this.$model[key])) {
-                const childModel = this.$model[key];
                 const childTableName = `${this.$tableName}_${key}`
 
                 this.$prepare(`

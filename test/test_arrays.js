@@ -4,7 +4,7 @@ import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
 import fs from "fs";
 import setupTests from "./util/setup.js";
-import {classNameFromModel} from "../src/extractClass.js";
+import { classNameFromModel } from "../src/extractClass.js";
 
 const args = new ParseArgs().run();
 
@@ -12,13 +12,13 @@ const models = {
     "GameModel": {
         "modelname": "VARCHAR(32)",
         "owner": "@Cred",
-        "rounds": [{            
+        "rounds": [{
             "col": [{
                 "category": "VARCHAR(64)",
                 "row": [{
                     "value": "INTEGER",
                     "question": "VARCHAR(256)",
-                    "answer": "VARCHAR(256)",                    
+                    "answer": "VARCHAR(256)",
                 }]
             }]
         }],
@@ -53,7 +53,7 @@ setupTests(models, "Test setting array values on reflective object", function ()
 
         it("is set locally", function () {
             assert.strictEqual(this.c1.friends[0], this.c2);
-        });        
+        });
 
         it("is set in db", function () {
             const factory = new ModelFactory();
@@ -66,7 +66,7 @@ setupTests(models, "Test setting array values on reflective object", function ()
             assert.strictEqual(c3.friends[0], c4);
 
             factory.close();
-        });          
+        });
     });
 
     // Inferred objects are reflected objects not implicitly create with new, rather
@@ -86,9 +86,8 @@ setupTests(models, "Test setting array values on reflective object", function ()
         it("non-null sanity check", function () {
             console.log("this.gm", this.gm);
             assert.ok(this.gm);
-        });        
+        });
     });
-
 
     // Inferred objects are reflected objects not implicitly create with new, rather
     // they are created from a pojo and examining the model the determine the type.
@@ -99,6 +98,29 @@ setupTests(models, "Test setting array values on reflective object", function ()
 
         it("is set locally", function () {
             console.log("this.c1", this.c1);
+        });
+    });
+
+    describe("deleting an object will delete all array indices", function () {
+        before(function () {
+            // this.factory.options = { verbose: console.log }
+            this.adam = new this.factory.classes.Cred({ "username": "zander" });
+            this.eve = new this.factory.classes.Cred({ "username": "eve" });
+            this.adam.friends.push(this.eve);
+            this.adam.$delete();
+        });
+
+        it("sanity check - user deleted", function () {
+            const cred = this.factory.classes.Cred.get({ "username": "zander" });
+            console.log(this.factory.classes.Cred.model);
+            console.log(cred);
+            assert.ok(!cred);
+        });
+
+        it("db indices deleted", function () {
+            const table = this.factory.classes.Cred.tableName;
+            const all = this.factory.prepare(`SELECT * FROM ${table} WHERE idx = ?`).all(this.adam.idx);
+            assert.strictEqual(all.length, 0);
         });        
     });
 
