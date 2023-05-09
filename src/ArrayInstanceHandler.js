@@ -27,7 +27,7 @@ export default class ArrayInstanceHandler extends InstanceHandler {
             return this.setAndReflect(target, prop, value);
         }
         else if (Array.isArray(value)) {
-            console.log("HURRAH");
+            // ???
         }
         else if (typeof value === "object") {
             const aClass = this.factory.getClass(this.model);

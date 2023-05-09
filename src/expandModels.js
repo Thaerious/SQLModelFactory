@@ -1,5 +1,5 @@
 /**
- * Look for inferred models and move them to their own class/model.
+ * Look for nested models and move them to their own class/model.
  */
 export default function expandModels(models) {
     let i = 0;
@@ -28,7 +28,7 @@ export default function expandModels(models) {
                 const newName = `_t${i++}`;
                 newModel[key] = [`@${newName}`];
 
-                value.$inferred = modelName;
+                value.$nested = modelName;
                 value.ridx = "INTEGER NOT NULL";
                 value.$append = value.$append || [];
                 value.$append.push(
@@ -42,7 +42,7 @@ export default function expandModels(models) {
                 const newName = `_t${i++}`;
                 newModel[key] = `@${newName}`;
 
-                value.$inferred = modelName;
+                value.$nested = modelName;
                 value.ridx = "INTEGER NOT NULL";
                 value.$append = value.$append || [];
                 value.$append.push(

@@ -184,7 +184,7 @@ export default function classFactory(factory, name, model) {
                     this._createArrayIndexTable(`${tableName}_${key}`, tableName);
                 }
                 else if (typeof model[key] === "string" && key[0] !== '$') {
-                    // Inferred class w/o @reference
+                    // nested class w/o @reference
                     if (model[key] === '@') throw new Error();
                     fields.push(`${key} ${model[key]}`);
                 }

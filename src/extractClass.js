@@ -46,11 +46,11 @@ function hasReference(value) {
     return extract != null;
 }
 
-function isInferred(value) {
+function isNested(value) {
     if (Array.isArray(value)) value = value.flat().join("");
     const extract = /@[a-zA-Z0-9_]+/.exec(value);
     if (!extract) return false;
     return extract[0].startsWith("@_t");
 }
 
-export { extractClass, hasReference, classNameFromModel, isInferred }
+export { extractClass, hasReference, classNameFromModel, isNested }

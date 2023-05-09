@@ -1,4 +1,4 @@
-import { classNameFromModel, extractClass, hasReference, isInferred } from "./extractClass.js";
+import { classNameFromModel, extractClass, hasReference, isNested } from "./extractClass.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -80,8 +80,6 @@ export default class InstanceHandler {
     }
 
     delete() {
-        console.log("delete", this);
-
         for (const key of Object.keys(this.$model)) {
             if (key.startsWith("$")) continue;
             if (Array.isArray(this.$model[key])) {

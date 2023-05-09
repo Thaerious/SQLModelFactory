@@ -122,7 +122,7 @@ const models = {
         c5.friends.push(new Game({ name: "ima game" }));
     } catch { }
 
-    // adding pojo to array will create a new object using inferred type
+    // adding pojo to array will create a new object using nested type
     c5.friends.push({ username: "xandor" });
 
     // Create a new reflected object with pojo fields that become reflected

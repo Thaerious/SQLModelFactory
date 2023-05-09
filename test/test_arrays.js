@@ -67,9 +67,9 @@ setupTests(models, "Test setting array values on reflective object", function ()
         });
     });
 
-    // Inferred objects are reflected objects not implicitly create with new, rather
+    // Nested objects are reflected objects not implicitly create with new, rather
     // they are created from a pojo and examining the model the determine the type.
-    describe("constructor with inferred array object", function () {
+    describe("constructor with nested array object", function () {
         before(function () {
             this.cred = new this.factory.classes.Cred({ "username": "adam" });
             this.gm = new this.factory.classes.GameModel({
@@ -87,9 +87,9 @@ setupTests(models, "Test setting array values on reflective object", function ()
         });
     });
 
-    // Inferred objects are reflected objects not implicitly create with new, rather
+    // Nested objects are reflected objects not implicitly create with new, rather
     // they are created from a pojo and examining the model the determine the type.
-    describe("assign inferred object", function () {
+    describe("assign nested object", function () {
         before(function () {
             this.cred = new this.factory.classes.Cred({ "username": "adam" });
         });
