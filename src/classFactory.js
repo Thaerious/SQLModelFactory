@@ -147,7 +147,7 @@ export default function classFactory(factory, name, model) {
             this._createTable(
                 model,
                 tableName,
-                [`idx INTEGER PRIMARY KEY AUTOINCREMENT`]
+                [`idx INTEGER PRIMARY KEY AUTOINCREMENT`],
             );
         }
 
@@ -191,7 +191,7 @@ export default function classFactory(factory, name, model) {
                     "aidx": "VARCHAR(64)",  // array index (in js object)
                     "ridx": "INTEGER",       // parent/root index (what is referring)
                     "oidx": "INTEGER",      // object index (what is referred to)
-                    "$append": [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx)`]
+                    "$append": [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx) ON DELETE CASCADE`]
                 },
                 tableName
             );

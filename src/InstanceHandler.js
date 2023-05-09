@@ -142,6 +142,11 @@ export default class InstanceHandler {
         }
     }    
 
+    exists() {
+        const all = this.prepare(`SELECT * FROM ${this.tableName} WHERE idx = ?`).all(this.idx);
+        return all > 0;
+    }
+
     prepare(sql) {
         return this.factory.prepare(sql);
     }
