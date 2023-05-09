@@ -43,6 +43,7 @@ export default class InstanceHandler {
      */
     set(target, prop, value) {
         if (prop === "idx") throw new TypeError(`Cannot assign to read only property ${prop}`);
+        if (prop === "ridx") throw new TypeError(`Cannot assign to read only property ${prop}`);
 
         if (this.model.hasOwnProperty(prop)) {
             const ref = extractClass("", this.model[prop]);
@@ -91,9 +92,7 @@ export default class InstanceHandler {
                 `).run(this.idx);
             }
         }
-
-        this._deleteInferredObjects();
-        this._deleteInferredArrays();        
+    
         this._deleteThis();
     
     }
@@ -105,42 +104,6 @@ export default class InstanceHandler {
             DELETE FROM ${this.$tableName} WHERE idx = ?
         `).run(this.idx);
     }
-
-    _deleteInferredObjects() {
-        for (const key of Object.keys(this.$model)) {
-            if (!isInferred(this.$model[key])) continue;
-            if (Array.isArray(this.$model[key])) continue;
-            if (this[key] === undefined || this[key] === null) continue;
-
-            const all = this.factory.prepare(
-                `SELECT * FROM ${this.tableName} WHERE ${key} = ?
-            `).all(this[key].idx);
-
-            if (all.length <= 1) {
-                this[key].$delete();
-            }
-        }
-    }
-
-    _deleteInferredArrays() {
-        for (const key of Object.keys(this.$model)) {
-            if (!isInferred(this.$model[key])) continue;
-            if (!Array.isArray(this.$model[key])) continue;
-            const aClass = this.factory.getClass(this.$model[key]);
-            const table = aClass.tableName;
-
-            for (const element of this[key]) {
-                const all = this.factory.prepare(
-                    `SELECT * FROM ${this.tableName}_${key} WHERE oidx = ?
-                `).all(element.idx);   
-                console.log(all.length);
-
-                if (all.length <= 1) {
-                    element.$delete();
-                }                
-            }
-        }
-    }    
 
     exists() {
         const all = this.prepare(`SELECT * FROM ${this.tableName} WHERE idx = ?`).all(this.idx);

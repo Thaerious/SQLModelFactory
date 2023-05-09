@@ -21,7 +21,7 @@ const models = {
 setupTests(models, "Test inferred classes", function () {
     describe("deleting an instance deletes instance of inferred classes", function () {
         before(function () {
-            this.cred = new this.classes.Cred({
+            this.steve = new this.classes.Cred({
                 name: {
                     first: "steve",
                     last: "steverson"
@@ -32,7 +32,7 @@ setupTests(models, "Test inferred classes", function () {
                 ]
             });
             
-            this.cred = new this.classes.Cred({
+            this.bill = new this.classes.Cred({
                 name: {
                     first: "bill",
                     last: "billerson"
@@ -43,13 +43,14 @@ setupTests(models, "Test inferred classes", function () {
                 ]
             });
 
-            // this.cred.$delete();
+            this.factory.options = {verbose : console.log}
+            this.steve.$delete();
         });
 
         it("inferred field values deleted", function () {
-            const table = this.cred.name.constructor.tableName;
-            const all = this.factory.prepare(`SELECT * FROM ${table}`).all();
-            assert.strictEqual(all.length, 0);
+            const all = this.cred.name.constructor.all();
+            console.table(all);
+            assert.strictEqual(all.length, 1);
         });
 
         it("inferred array values deleted", function () {

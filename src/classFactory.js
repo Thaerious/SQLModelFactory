@@ -24,27 +24,33 @@ function listify(object, model) {
  * These need to be built after the object because the root index needs to be known.
  * See: #processDeferred
  */
-function extractArrays(list) {
-    const noArray = [];
+function extractDeferred(list) {
+    const notDeferred = [];
     const deferred = [];
 
     for (const i in list) {
         const data = list[i];
+
         if (Array.isArray(data.value)) {
             for (const i in data.value) {
                 deferred.push({
                     key: data.key,
                     value: data.value[i],
                     model: data.model[0],
-                    index: i
+                    index: i,
+                    type: 'array'
                 });
             }
-        } else {
-            noArray.push(data);
+        }
+        else if (data.model.startsWith("@_t")) {
+            deferred.push({ ...data, ...{ type: 'field' } });
+        }
+        else {
+            notDeferred.push(data);
         }
     }
 
-    return { noArray, deferred };
+    return { notDeferred, deferred };
 }
 
 /**
@@ -59,10 +65,13 @@ function seekReflected(list, factory) {
             continue;
         }
 
+
         const className = classNameFromModel(data.model);
+
         if (factory.isReflected(data.value)) {
             next.push({ key: data.key, value: data.value.idx, model: data.model });
-        } else {
+        }
+        else {
             try {
                 const instance = new factory.classes[className](data.value);
                 next.push({ key: data.key, value: instance.idx, model: data.model });
@@ -75,9 +84,14 @@ function seekReflected(list, factory) {
     return next;
 }
 
-function processDeferred(deferred, target) {
-    for (const item of deferred) {
-        target[item.key][item.index] = item.value;
+function processDeferred(factory, deferred, target) {
+    for (const data of deferred) {
+        if (data.type === "field") {
+            target[data.key] = { ...data.value, ...{ ridx: target.idx } };
+        }
+        else if (data.type === "array") {
+            target[data.key][data.index] = { ...data.value, ...{ ridx: target.idx } };
+        }
     }
 }
 
@@ -100,7 +114,8 @@ export default function classFactory(factory, name, model) {
             }
 
             const proxy = this.constructor._doProxy(this, this.idx);
-            processDeferred(deferred, proxy);
+
+            processDeferred(this.constructor.factory, deferred, proxy);
             return proxy;
         }
 
@@ -116,8 +131,8 @@ export default function classFactory(factory, name, model) {
 
         _constructFromData(source) {
             const list = listify(source, this.constructor.model);
-            const { noArray, deferred } = extractArrays(list);
-            const seek = seekReflected(noArray, this.constructor.factory);
+            const { notDeferred, deferred } = extractDeferred(list);
+            const seek = seekReflected(notDeferred, this.constructor.factory);
 
             if (seek.length === 0) {
                 this._constructDefault();
@@ -152,7 +167,7 @@ export default function classFactory(factory, name, model) {
         }
 
         /**
-        * Used internally to create the tables used by the proxies.
+        * Used internally to create the DB tables used by the proxies.
         */
         static _createTable(model, tableName, fields = [], appends = []) {
             for (const key of Object.keys(model)) {
@@ -169,14 +184,13 @@ export default function classFactory(factory, name, model) {
                     this._createArrayIndexTable(`${tableName}_${key}`, tableName);
                 }
                 else if (typeof model[key] === "string" && key[0] !== '$') {
-                    // Rule string w/o class reference (@class)
+                    // Inferred class w/o @reference
                     if (model[key] === '@') throw new Error();
                     fields.push(`${key} ${model[key]}`);
                 }
             }
 
             const columns = [...fields, ...appends].join(",\n\t");
-
             const statement = this.factory.prepare(`CREATE TABLE IF NOT EXISTS ${tableName}(\n\t${columns}\n)`);
             statement.run();
             return statement;
@@ -191,7 +205,12 @@ export default function classFactory(factory, name, model) {
                     "aidx": "VARCHAR(64)",  // array index (in js object)
                     "ridx": "INTEGER",       // parent/root index (what is referring)
                     "oidx": "INTEGER",      // object index (what is referred to)
-                    "$append": [`FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx) ON DELETE CASCADE`]
+                    "$append": [
+                        `CONSTRAINT fk${tableName}
+                         FOREIGN KEY (ridx)
+                         REFERENCES ${rootTable} (idx)
+                         ON DELETE CASCADE`
+                    ]
                 },
                 tableName
             );

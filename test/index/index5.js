@@ -7,9 +7,9 @@ const models = {
             "first": "VARCHAR(64)",
             "last": "VARCHAR(64)"
         },
-        "games": [{
-            "name": "VARCHAR(32)",
-        }],
+        "nicknames": [{
+            "name": "VARCHAR(64)"
+        }]
     }
 }
 
@@ -19,27 +19,18 @@ ModelFactory.instance.createTables();
 const factory = ModelFactory.instance;
 
 const steve = new classes.Cred({
-    games: [
-        { name: "steve's first game" },
-        { name: "steve's second game" },
+    name: {
+        first: "steve",
+        last: "mcqueen"
+    },
+    nicknames: [
+        { name: "queenie" }
     ]
 });
 
-const bill = new classes.Cred({
-    games: [
-        steve.games[0]
-    ]
-});
+// console.log("models", factory.models);
+// console.log("\n");
 
-const charlie = new classes.Cred({
-    name: steve.name,
-    games: [
-        { name: "steve 2's first game" },
-        { name: "steve 2's second game" },
-    ]
-});
-
-ModelFactory.instance.options = { verbose: console.log };
+factory.options = { verbose: console.log };
+console.log(steve);
 steve.$delete();
-
-console.log(classes.Cred.all());
