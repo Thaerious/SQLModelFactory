@@ -1,8 +1,6 @@
 import assert from "assert";
 import ModelFactory from "../src/ModelFactory.js";
-import { mkdirif } from "@thaerious/utility";
 import ParseArgs from "@thaerious/parseargs";
-import fs from "fs";
 import setupTests from "./util/setup.js";
 import { classNameFromModel } from "../src/extractClass.js";
 

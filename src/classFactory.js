@@ -86,7 +86,6 @@ export default function classFactory(factory, name, model) {
 
     return class {
         static factory = factory;
-        static tableName = name.toLowerCase();
         static instantiated = new Map();
         static model = model;
         static name = name;

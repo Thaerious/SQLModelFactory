@@ -1,4 +1,4 @@
-import { classNameFromModel, extractClass, hasReference } from "./extractClass.js";
+import { classNameFromModel, extractClass, hasReference, isInferred } from "./extractClass.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -70,7 +70,7 @@ export default class InstanceHandler {
         return Reflect.set(...arguments);
     }
 
-    _setVal(prop, value) {        
+    _setVal(prop, value) {
         this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
@@ -79,6 +79,8 @@ export default class InstanceHandler {
     }
 
     delete() {
+        console.log("delete", this);
+
         for (const key of Object.keys(this.$model)) {
             if (key.startsWith("$")) continue;
             if (Array.isArray(this.$model[key])) {
@@ -90,12 +92,55 @@ export default class InstanceHandler {
             }
         }
 
+        this._deleteInferredObjects();
+        this._deleteInferredArrays();        
+        this._deleteThis();
+    
+    }
+
+    _deleteThis() {
         this.instantiated.delete(this.idx);
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?
         `).run(this.idx);
     }
+
+    _deleteInferredObjects() {
+        for (const key of Object.keys(this.$model)) {
+            if (!isInferred(this.$model[key])) continue;
+            if (Array.isArray(this.$model[key])) continue;
+            if (this[key] === undefined || this[key] === null) continue;
+
+            const all = this.factory.prepare(
+                `SELECT * FROM ${this.tableName} WHERE ${key} = ?
+            `).all(this[key].idx);
+
+            if (all.length <= 1) {
+                this[key].$delete();
+            }
+        }
+    }
+
+    _deleteInferredArrays() {
+        for (const key of Object.keys(this.$model)) {
+            if (!isInferred(this.$model[key])) continue;
+            if (!Array.isArray(this.$model[key])) continue;
+            const aClass = this.factory.getClass(this.$model[key]);
+            const table = aClass.tableName;
+
+            for (const element of this[key]) {
+                const all = this.factory.prepare(
+                    `SELECT * FROM ${this.tableName}_${key} WHERE oidx = ?
+                `).all(element.idx);   
+                console.log(all.length);
+
+                if (all.length <= 1) {
+                    element.$delete();
+                }                
+            }
+        }
+    }    
 
     prepare(sql) {
         return this.factory.prepare(sql);
