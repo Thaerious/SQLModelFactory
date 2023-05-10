@@ -75,6 +75,11 @@ class ModelFactory {
         return this.classes[classname];
     }
 
+    getModel(name) {
+        const classname = classNameFromModel(name);
+        return this.models[classname];
+    }    
+
     createTables() {
         for (const aClass in this.classes) {
             this.classes[aClass].createTables();

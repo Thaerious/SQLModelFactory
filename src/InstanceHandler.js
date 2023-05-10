@@ -9,13 +9,16 @@ export default class InstanceHandler {
      * @param {Integer} idx - The index of the object this belongs to.
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
+     * @param {Map} instantiated - Previously constructed instances.
+     * @param {Function} constructor - Instance constructor.
      */
-    constructor(factory, idx, tableName, model, map) {
+    constructor(factory, idx, tableName, model, map, constructor) {
         this.factory = factory;
         this.idx = idx;
         this.tableName = tableName;
         this.model = model;
         this.instantiated = map;
+        this.constructor = constructor;
     }
 
     /**

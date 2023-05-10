@@ -56,12 +56,30 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * Handles removing (deleting) data from an array field.
      */
     deleteProperty(target, prop) {
-        if (prop in target) {
-            delete target[prop];
-            this.prepare(`
-                DELETE FROM ${this.tableName} WHERE aidx = ? AND ridx = ?
-            `).run(prop, this.idx);
-            return true;
+        console.log("ARRAY INSTANCE DELETE PROPERTY");
+        const model = this.factory.getModel(this.model)
+
+        if (target[prop]) {
+            if (model.$nested) {
+                this.factory.prepare(`
+                    DELETE FROM ${model.$indexTable} WHERE oidx = ?                
+                `).run(target[prop].idx);
+
+                this.factory.prepare(`
+                    DELETE FROM ${model.$classname.toLowerCase()} WHERE idx = ?                
+                `).run(target[prop].idx);
+            }
         }
+
+        return Reflect.deleteProperty(...arguments);
+
+        // console.log("ARRAY PROP DELETE");
+        // if (prop in target) {
+        //     delete target[prop];
+        //     this.prepare(`
+        //         DELETE FROM ${this.tableName} WHERE aidx = ? AND ridx = ?
+        //     `).run(prop, this.idx);
+        //     return true;
+        // }
     }
 }

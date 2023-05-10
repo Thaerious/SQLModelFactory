@@ -181,6 +181,7 @@ export default function classFactory(factory, name, model) {
                     appends.push(extract.foreignKey);
                 }
                 else if (Array.isArray(model[key])) {
+                    this.factory.getModel(model[key]).$indexTable = `${tableName}_${key}`;
                     this._createArrayIndexTable(`${tableName}_${key}`, tableName);
                 }
                 else if (typeof model[key] === "string" && key[0] !== '$') {
@@ -291,7 +292,14 @@ export default function classFactory(factory, name, model) {
                 SELECT * FROM  ${this.tableName} WHERE idx = ?
             `).get(idx);
 
-            const hnd = new InstanceHandler(this.factory, row.idx, this.tableName, this.model, this.instantiated);
+            const hnd = new InstanceHandler(
+                this.factory,
+                row.idx,
+                this.tableName,
+                this.model,
+                this.instantiated,
+                this.constructor
+            );
             this.instantiated.set(idx, new Proxy(target, hnd));
 
             Object.assign(target, row);
@@ -313,7 +321,17 @@ export default function classFactory(factory, name, model) {
                     const childTableName = `${this.tableName}_${key}`;
                     const array = this._loadArray(idx, childTableName, this.model[key]);
 
-                    const ahnd = new ArrayInstanceHandler(this.factory, idx, childTableName, this.model[key], this.instantiated);
+                    const instanceClass = this.factory.getClass(this.model[key]);
+
+                    const ahnd = new ArrayInstanceHandler(
+                        this.factory,
+                        idx,
+                        childTableName,
+                        this.model[key],
+                        this.instantiated,
+                        instanceClass,
+                    );
+
                     data[key] = new Proxy(array, ahnd);
                 }
             }

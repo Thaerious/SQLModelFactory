@@ -76,7 +76,7 @@ setupTests(models, "deleting an instance removes all nested instances from the D
     });
 });
 
-setupTests(models, "deleting the nested field", function () {
+setupTests(models, "[2] deleting a nested field", function () {
     before(function () {
         console.log(this.factory.models);
         this.steve = new this.classes.Cred({
@@ -115,9 +115,8 @@ setupTests(models, "deleting the nested field", function () {
     });
 });
 
-setupTests(models, "deleting the nested field", function () {
+setupTests(models, "[3] deleting a nested array value", function () {
     before(function () {
-        console.log(this.factory.models);
         this.steve = new this.classes.Cred({
             name: {
                 first: "steve",
@@ -131,25 +130,31 @@ setupTests(models, "deleting the nested field", function () {
     });
 
     describe("delete the nested array value", function () {
-        before(function () {
-            this.nameConstructor = this.steve.name.constructor;
+        before(function () {            
             this.factory.options = {verbose : console.log}
             delete this.steve.games[0];
-            console.log(this.steve);
         });
 
         it("removed from the object", function () {
-            delete this.steve.name;
-            assert.strictEqual(this.steve.name, undefined);
+            assert.strictEqual(this.steve.games[0], undefined);
         });
 
-        it("removed from the DB", function () {
-            const all = this.nameConstructor.all();
-            assert.strictEqual(all.length, 0);
-        });        
-
-        it("returns true on second delete", function () {
-            assert.ok(delete this.steve.name);
+        it("removed from the DB item table", function () {
+            const all = this.steve.games.$constructor.all();
+            assert.strictEqual(all.length, 1);
         });
+
+        it("removed from the DB index table", function () {
+            const model = this.factory.getModel(this.steve.games.model);
+            const all = this.factory.prepare(
+                `SELECT * FROM ${model.$indexTable} WHERE ridx = ?`
+            ).all(this.steve.idx);
+
+            assert.strictEqual(all.length, 1);
+        });
+
+        // it("returns true on second delete", function () {
+        //     assert.ok(delete this.steve.games[0]);
+        // });
     });
 });
