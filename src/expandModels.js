@@ -28,28 +28,36 @@ export default function expandModels(models) {
                 const newName = `_t${i++}`;
                 newModel[key] = [`@${newName}`];
 
-                value.$nested = modelName;
+                value.$nested = {
+                    parent: modelName,
+                    column: key
+                };
+
                 value.ridx = "INTEGER NOT NULL";
                 value.$append = value.$append || [];
                 value.$append.push(
                     `FOREIGN KEY (ridx) REFERENCES ${modelName} (idx) ON DELETE CASCADE`
                 );
 
-                root[newName] = expandModel(modelName, value);
+                root[newName] = expandModel(newName, value);
 
                 if (!newModel.$append) newModel.$append = [];
             } else {
                 const newName = `_t${i++}`;
                 newModel[key] = `@${newName}`;
 
-                value.$nested = modelName;
+                value.$nested = {
+                    parent: modelName,
+                    column: key
+                };
+                
                 value.ridx = "INTEGER NOT NULL";
                 value.$append = value.$append || [];
                 value.$append.push(
                     `FOREIGN KEY (ridx) REFERENCES ${modelName} (idx) ON DELETE CASCADE`
                 );
                 
-                root[newName] = expandModel(modelName, value);
+                root[newName] = expandModel(newName, value);
             }
         }
 

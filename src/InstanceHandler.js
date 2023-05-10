@@ -79,6 +79,18 @@ export default class InstanceHandler {
         `).run(value);
     }
 
+    deleteProperty(target, prop) {
+        if (target[prop]) {
+            const propModel = target[prop].model;
+
+            if (target[prop].model.$nested) {
+                target[prop].delete();
+            }
+        }
+
+        return Reflect.deleteProperty(...arguments);
+    }
+
     delete() {
         for (const key of Object.keys(this.$model)) {
             if (key.startsWith("$")) continue;
@@ -91,8 +103,17 @@ export default class InstanceHandler {
             }
         }
     
+        if (this.model.$nested) this._removeFromParent();
         this._deleteThis();
-    
+    }
+
+    _removeFromParent() {
+        const parent = this.model.$nested.parent;
+        const column = this.model.$nested.column;
+
+        this.factory.prepare(`
+            UPDATE ${parent} SET ${column} = NULL WHERE ${column} = ?
+        `).run(this.idx);
     }
 
     _deleteThis() {

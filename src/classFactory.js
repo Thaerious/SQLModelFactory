@@ -206,8 +206,7 @@ export default function classFactory(factory, name, model) {
                     "ridx": "INTEGER",       // parent/root index (what is referring)
                     "oidx": "INTEGER",      // object index (what is referred to)
                     "$append": [
-                        `CONSTRAINT fk${tableName}
-                         FOREIGN KEY (ridx)
+                        `FOREIGN KEY (ridx)
                          REFERENCES ${rootTable} (idx)
                          ON DELETE CASCADE`
                     ]

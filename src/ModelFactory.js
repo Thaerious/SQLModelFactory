@@ -87,7 +87,7 @@ class ModelFactory {
 
             this.sq3 = new sqlite3(this._dbFile, this._sqlOptions);
             this.sq3.pragma('journal_mode = WAL');
-            this.sq3.pragma('oreign_keys = ON');
+            this.sq3.pragma('foreign_keys = ON');
             const statement = this.sq3.prepare(expression);
             return statement;
         } catch (error) {

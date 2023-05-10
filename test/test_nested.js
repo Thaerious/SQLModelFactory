@@ -18,62 +18,138 @@ const models = {
 }
 
 // An nested class is any class was declared as a value of another class.
-setupTests(models, "Test nested classes", function () {
-    describe("deleting an instance deletes instance of nested classes", function () {
+setupTests(models, "deleting an instance removes all nested instances from the DB", function () {
+    before(function () {
+        this.steve = new this.classes.Cred({
+            name: {
+                first: "steve",
+                last: "steverson"
+            },
+            games: [
+                { name: "steve's first game" },
+                { name: "steve's second game" },
+            ]
+        });
+
+        this.bill = new this.classes.Cred({
+            name: {
+                first: "bill",
+                last: "billerson"
+            },
+            games: [
+                { name: "bill's first game" },
+                { name: "bill's second game" },
+            ]
+        });
+    });
+
+    describe("before delete", function () {
+        it("check nested field row count", function () {
+            const nestedClass = this.bill.name.constructor;
+            const all = nestedClass.all();
+            assert.strictEqual(all.length, 2);
+        });
+
+        it("check nested array row count", function () {
+            const nestedClass = this.bill.games[0].constructor;
+            const all = nestedClass.all();
+            assert.strictEqual(all.length, 4);
+        });
+    });
+
+    describe("delete the root object", function () {
         before(function () {
-            this.steve = new this.classes.Cred({
-                name: {
-                    first: "steve",
-                    last: "steverson"
-                },
-                games: [
-                    { name: "steve's first game" },
-                    { name: "steve's second game" },
-                ]
-            });
-            
-            this.bill = new this.classes.Cred({
-                name: {
-                    first: "bill",
-                    last: "billerson"
-                },
-                games: [
-                    { name: "bill's first game" },
-                    { name: "bill's second game" },
-                ]
-            });
+            this.steve.$delete();
         });
 
-        describe("before delete", function () {
-            it("check nested field row count", function () {
-                const nestedClass = this.bill.name.constructor;
-                const all = nestedClass.all();
-                assert.strictEqual(all.length, 2);
-            });
-    
-            it("check nested array row count", function () {
-                const nestedClass = this.bill.games[0].constructor;
-                const all = nestedClass.all();
-                assert.strictEqual(all.length, 4);
-            });               
+        it("nested field values deleted", function () {
+            const nestedClass = this.bill.name.constructor;
+            const all = nestedClass.all();
+            assert.strictEqual(all.length, 1);
         });
 
-        describe("do delete", function () {
-            before(function () {
-                this.steve.$delete();
-            });
+        it("nested array values deleted", function () {
+            const nestedClass = this.bill.games[0].constructor;
+            const all = nestedClass.all();
+            assert.strictEqual(all.length, 2);
+        });
+    });
+});
 
-            it("nested field values deleted", function () {
-                const nestedClass = this.bill.name.constructor;
-                const all = nestedClass.all();
-                assert.strictEqual(all.length, 1);
-            });
-    
-            it("nested array values deleted", function () {
-                const nestedClass = this.bill.games[0].constructor;
-                const all = nestedClass.all();
-                assert.strictEqual(all.length, 2);
-            });              
-        });     
+setupTests(models, "deleting the nested field", function () {
+    before(function () {
+        console.log(this.factory.models);
+        this.steve = new this.classes.Cred({
+            name: {
+                first: "steve",
+                last: "steverson"
+            },
+            games: [
+                { name: "steve's first game" },
+                { name: "steve's second game" },
+            ]
+        });
+    });
+
+    describe("delete the nested object field", function () {
+        before(function () {
+            this.nameConstructor = this.steve.name.constructor;
+            this.factory.options = {verbose : console.log}
+            delete this.steve.name;
+            console.log(this.steve);
+        });
+
+        it("removed from the object", function () {
+            delete this.steve.name;
+            assert.strictEqual(this.steve.name, undefined);
+        });
+
+        it("removed from the DB", function () {
+            const all = this.nameConstructor.all();
+            assert.strictEqual(all.length, 0);
+        });        
+
+        it("returns true on second delete", function () {
+            assert.ok(delete this.steve.name);
+        });
+    });
+});
+
+setupTests(models, "deleting the nested field", function () {
+    before(function () {
+        console.log(this.factory.models);
+        this.steve = new this.classes.Cred({
+            name: {
+                first: "steve",
+                last: "steverson"
+            },
+            games: [
+                { name: "steve's first game" },
+                { name: "steve's second game" },
+            ]
+        });
+    });
+
+    describe("delete the nested array value", function () {
+        before(function () {
+            this.nameConstructor = this.steve.name.constructor;
+            this.factory.options = {verbose : console.log}
+            delete this.steve.games[0];
+            console.log(this.steve);
+        });
+
+        it("removed from the object", function () {
+            delete this.steve.name;
+            assert.strictEqual(this.steve.name, undefined);
+        });
+
+        it("removed from the DB", function () {
+            const all = this.nameConstructor.all();
+            assert.strictEqual(all.length, 0);
+        });        
+
+        it("returns true on second delete", function () {
+            assert.ok(delete this.steve.name);
+        });
     });
 });
