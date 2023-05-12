@@ -4,6 +4,7 @@
 import { mkdirif } from "@thaerious/utility";
 import ModelFactory from "../../src/ModelFactory.js";
 import assert from "assert";
+import fs from "fs";
 
 const models = {
     "Game": {
@@ -23,6 +24,8 @@ const models = {
 
 (() => {
     const DBPATH = mkdirif("test", "assets", "test.db");
+    if (fs.existsSync(DBPATH)) fs.rmSync(DBPATH);
+
     const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
     const { Game, Cred } = factory.createClasses(models);
     factory.createTables();
@@ -32,7 +35,7 @@ const models = {
             return super({ username: username, email: email });
         }
     }
-
+ 
     const c1 = new XCred("ed", "ed@there.ca");
     const c2 = Cred.get({ "username": "ed" });
 
@@ -43,6 +46,7 @@ const models = {
     assert.strictEqual(c1, c2);
 
     const c3 = new Cred({ username: "bill", email: "bill@mail.com" });
+
     c1.friends.push(c3);
     c1.friends.push(c1);
 

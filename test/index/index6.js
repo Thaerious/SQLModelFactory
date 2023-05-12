@@ -1,31 +1,36 @@
 import ModelFactory, { expandModels } from "../../src/ModelFactory.js";
 import { mkdirif } from "@thaerious/utility";
+import createTable from "../../src/createTable.js";
 
 const models = {
-    "GameModel": {
-        "modelname": "VARCHAR(32)",
-        "owner": "@Cred",
-        "rounds": [{            
-            "col": [{
-                "category": "VARCHAR(64)",                
-            }]
-        }]
+    "Address": {
+        "city": "VARCHAR(64)"
     },
     "Cred": {
-        "username": "VARCHAR(32)"
+        "value": "VARCHAR(64)",
+        "name": {
+            "first": "VARCHAR(64)",
+            "last": "VARCHAR(64)"
+        },
+        "games": [{
+            "name": "VARCHAR(32)",
+        }],
+        "home": "@Address",  
+        "friends": ["@Cred"],        
     }
 }
 
 const factory = ModelFactory.instance;
+factory.options = { verbose: console.log };
 factory.dbFile = "test/assets/test.db";
-factory.createClasses(models);
-factory.createTables();
 
-const cred = new factory.classes.Cred({ "username": "adam" });
-const gm = new factory.classes.GameModel({
-    "modelName": "My Model",
-    "owner": cred,
-    "rounds": [{
-        col: {}
-    }]
-});
+const expanded = expandModels(models);
+console.log(expanded.Cred.$);
+console.log(expanded.Cred.$append);
+
+for (const name in expanded) {
+    createTable(factory, expanded[name]);
+}
+
+// createTable(factory, factory.models._t0);
+// createTable(factory, factory.models._t1);

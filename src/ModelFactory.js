@@ -1,6 +1,7 @@
 import sqlite3 from "better-sqlite3";
 import classFactory from "./classFactory.js";
 import expandModels from "./expandModels.js";
+import createTable from "./createTable.js";
 import { classNameFromModel } from "./extractClass.js";
 
 class ModelFactoryError extends Error {
@@ -64,28 +65,6 @@ class ModelFactory {
         return false;
     }
 
-    /**
-     * Retrieve a reflective class by name.
-     * The name can be a string or a @-prefixed string.
-     * If the string is within an array it must be an array of length 1.
-     * Returns undefined if no class found.
-     */
-    getClass(name) {
-        const classname = classNameFromModel(name);
-        return this.classes[classname];
-    }
-
-    getModel(name) {
-        const classname = classNameFromModel(name);
-        return this.models[classname];
-    }    
-
-    createTables() {
-        for (const aClass in this.classes) {
-            this.classes[aClass].createTables();
-        }
-    }
-
     prepare(expression) {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
@@ -114,16 +93,24 @@ class ModelFactory {
      */
     createClasses(models) {
         const expandedModels = expandModels(models);
-
+        
         this.models = {
             ...this.models,
             ...expandedModels
         }
 
         for (const name in expandedModels) {
+            if (expandedModels[name].$modeltype === "index") continue;
             this.classes[name] = classFactory(this, name, expandedModels[name]);
         }
+
         return this.classes;
+    }
+
+    createTables() {
+        for (const model in this.models) {
+            createTable(this, this.models[model]);
+        }
     }
 }
 

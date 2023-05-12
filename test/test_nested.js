@@ -18,7 +18,7 @@ const models = {
 }
 
 // An nested class is any class was declared as a value of another class.
-setupTests(models, "deleting an instance removes all nested instances from the DB", function () {
+setupTests(models, "[1] deleting an instance removes all nested instances from the DB", function () {
     before(function () {
         this.steve = new this.classes.Cred({
             name: {
@@ -131,7 +131,6 @@ setupTests(models, "[3] deleting a nested array value", function () {
 
     describe("delete the nested array value", function () {
         before(function () {            
-            this.factory.options = {verbose : console.log}
             delete this.steve.games[0];
         });
 
@@ -153,8 +152,56 @@ setupTests(models, "[3] deleting a nested array value", function () {
             assert.strictEqual(all.length, 1);
         });
 
-        // it("returns true on second delete", function () {
-        //     assert.ok(delete this.steve.games[0]);
-        // });
+        it("returns true on second delete", function () {
+            assert.ok(delete this.steve.games[0]);
+        });
+    });
+});
+
+setupTests(models, "[4] reassign nested array value", function () {
+    before(function () {
+        this.factory.options = { verbose: console.log }
+        
+        this.steve = new this.classes.Cred({
+            name: {
+                first: "steve",
+                last: "steverson"
+            },
+            games: [
+                { name: "steve's first game" },
+                { name: "steve's second game" },
+            ]
+        });
+    });
+
+    describe("reassign the nested array value", function () {
+        before(function () {            
+            this.steve.games[0] = {name: "steve's third game"}
+        });
+
+        it("reassigned from the object", function () {
+            console.log("steve");
+            console.table(this.steve);
+            assert.strictEqual(this.steve.games[0].name, "steve's third game");
+        });
+
+        it("reassigned from the DB item table", function () {
+            const all = this.steve.games.$constructor.all();
+            console.log("all");
+            console.table(all);
+            assert.strictEqual(all.length, 2);
+        });
+
+        it("reassigned the DB index table", function () {
+            const model = this.factory.getModel(this.steve.games.model);
+            const all = this.factory.prepare(
+                `SELECT * FROM ${model.$indexTable} WHERE ridx = ?`
+            ).all(this.steve.idx);
+
+            console.log("indices");
+            console.table(all);
+
+            assert.strictEqual(all.length, 2);
+        });
     });
 });

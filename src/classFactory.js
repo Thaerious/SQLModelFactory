@@ -96,8 +96,6 @@ function processDeferred(factory, deferred, target) {
 }
 
 export default function classFactory(factory, name, model) {
-    model["$classname"] = name;
-
     return class {
         static factory = factory;
         static instantiated = new Map();
@@ -114,7 +112,6 @@ export default function classFactory(factory, name, model) {
             }
 
             const proxy = this.constructor._doProxy(this, this.idx);
-
             processDeferred(this.constructor.factory, deferred, proxy);
             return proxy;
         }
@@ -138,7 +135,6 @@ export default function classFactory(factory, name, model) {
                 this._constructDefault();
             } else {
                 const div = sqlifyList(seek);
-
                 this.idx = this.constructor.factory.prepare(`
                 INSERT INTO ${this.constructor.tableName}
                 (${div.keys})
@@ -146,74 +142,6 @@ export default function classFactory(factory, name, model) {
             `).run(div.values).lastInsertRowid;
             }
             return deferred;
-        }
-
-        /**
-        * Create all tables.
-        */
-        static createTables() {
-            return this._createObjectTable(this.model, this.tableName);
-        }
-
-        /**
-        * Used internally to create the object tables used by the proxies.
-        */
-        static _createObjectTable(model, tableName) {
-            this._createTable(
-                model,
-                tableName,
-                [`idx INTEGER PRIMARY KEY AUTOINCREMENT`],
-            );
-        }
-
-        /**
-        * Used internally to create the DB tables used by the proxies.
-        */
-        static _createTable(model, tableName, fields = [], appends = []) {
-            for (const key of Object.keys(model)) {
-                if (key === "$append") {
-                    for (const v of model[key]) fields.push(v);
-                }
-                else if (hasReference(model[key])) {
-                    // a known @class RHS rule
-                    const extract = extractClass(key, model[key]);
-                    fields.push(`${key} ${extract.column}`);
-                    appends.push(extract.foreignKey);
-                }
-                else if (Array.isArray(model[key])) {
-                    this.factory.getModel(model[key]).$indexTable = `${tableName}_${key}`;
-                    this._createArrayIndexTable(`${tableName}_${key}`, tableName);
-                }
-                else if (typeof model[key] === "string" && key[0] !== '$') {
-                    // nested class w/o @reference
-                    if (model[key] === '@') throw new Error();
-                    fields.push(`${key} ${model[key]}`);
-                }
-            }
-
-            const columns = [...fields, ...appends].join(",\n\t");
-            const statement = this.factory.prepare(`CREATE TABLE IF NOT EXISTS ${tableName}(\n\t${columns}\n)`);
-            statement.run();
-            return statement;
-        }
-
-        /**
-         * Used internally to create the array tables used by the proxies.
-         */
-        static _createArrayIndexTable(tableName, rootTable) {
-            this._createTable(
-                {
-                    "aidx": "VARCHAR(64)",  // array index (in js object)
-                    "ridx": "INTEGER",       // parent/root index (what is referring)
-                    "oidx": "INTEGER",      // object index (what is referred to)
-                    "$append": [
-                        `FOREIGN KEY (ridx)
-                         REFERENCES ${rootTable} (idx)
-                         ON DELETE CASCADE`
-                    ]
-                },
-                tableName
-            );
         }
 
         /**
@@ -315,24 +243,23 @@ export default function classFactory(factory, name, model) {
         static _arrayify(idx) {
             const data = {};
 
-            for (const key of Object.keys(this.model)) {
-                if (key.startsWith("$")) continue;
-                if (Array.isArray(this.model[key])) {
-                    const childTableName = `${this.tableName}_${key}`;
-                    const array = this._loadArray(idx, childTableName, this.model[key]);
+            for (const field of Object.keys(model)) {
+                if (model[field].isArray) {
+                    console.log("key " + model[field]);
 
-                    const instanceClass = this.factory.getClass(this.model[key]);
+                    console.log(field, field.indexTable);
+                    const array = this._loadArray(idx,  field.indexTable, this.model[field]);
 
-                    const ahnd = new ArrayInstanceHandler(
-                        this.factory,
-                        idx,
-                        childTableName,
-                        this.model[key],
-                        this.instantiated,
-                        instanceClass,
-                    );
+                    const ahnd = new ArrayInstanceHandler({
+                        factory: this.factory,
+                        idx: idx,
+                        tableName: model[field].tableName,
+                        model: model[field].deRef,
+                        map: this.instantiated,
+                        constructor: this.factory.getClass(this.model[field])
+                    });
 
-                    data[key] = new Proxy(array, ahnd);
+                    data[field] = new Proxy(array, ahnd);
                 }
             }
 
@@ -360,18 +287,18 @@ export default function classFactory(factory, name, model) {
 
         /**
          * Load array data from DB to object.
+         * Retreives all data from 'table' that matches root object 'rootIDX'.
          * Retrieves all data from the child table that matches the root object's index value.
-         * @param {Integer} rootIdx - The index of parent (root) object.
+         * @param {Integer} rootIDX - The index of parent (root) object.
          * @param {String} childTableName - The name of the child table.
          */
-        static _loadArray(rootIdx, childTableName, arrayModel) {
+        static _loadArray(rootIDX, childTableName, arrayModel) {
             const array = [];
-
-            const aClass = this.factory.getClass(arrayModel);
+            const aClass = this.factory.classes[arrayModel.$classname];
 
             const all = this.factory.prepare(`
                 SELECT * FROM ${childTableName} WHERE ridx = ?
-            `).all(rootIdx);
+            `).all(rootIDX);
 
             for (const row of all) {
                 array[row.aidx] = aClass.get(row.oidx);

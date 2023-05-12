@@ -1,3 +1,4 @@
+import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 
 class ReflectiveTypeError extends Error {
@@ -14,7 +15,7 @@ class ReflectiveTypeError extends Error {
  * ridx : root (parent) index
  * oidx : index of the object being assigned
  */
-export default class ArrayInstanceHandler extends InstanceHandler {
+export default class NestedArrayHandler extends InstanceHandler {
     /**
      * @param {ModelFactory} factory - Shared factory object that created this instance.
      * @param {Integer} idx - The index of the object this belongs to.
@@ -23,9 +24,9 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * @param {Map} instantiated - Previously constructed instances.
      * @param {Function} constructor - Instance constructor.
      */
-    constructor({factory, idx, tableName, model, map, constructor}) {
+    constructor(factory, idx, tableName, model, map, constructor) {
         super(factory, idx, tableName, model, map, constructor);
-        this.createTables();
+        this.createTable();
     }
 
     /**
@@ -99,5 +100,28 @@ export default class ArrayInstanceHandler extends InstanceHandler {
         //     `).run(prop, this.idx);
         //     return true;
         // }
+    }
+
+    /**
+     * Used internally to create the array tables used by the proxies.
+     */
+    static createTable() {
+        console.log(this.model);
+
+        const tableName = this.model.$classname.toLowerCase();
+        const rootTable = this.model.$nested.parent;
+
+        this.factory._createTable(
+            {
+                "aidx": "VARCHAR(64)",  // array index (in js object)
+                "ridx": "INTEGER",       // parent/root index (what is referring)
+                "oidx": "INTEGER",      // object index (what is referred to)
+                "$append": [
+                    `FOREIGN KEY (ridx) REFERENCES ${rootTable} (idx) ON DELETE CASCADE`,
+                    `UNIQUE(aidx, ridx)`
+                ]
+            },
+            tableName
+        );
     }
 }
