@@ -18,7 +18,7 @@ class FieldProxy {
         const value = primitive[prop];
 
         if (!value && this[prop]) {
-            return this[prop](primitive);
+            return this[prop](primitive, prop);
         } else {
             return typeof value === 'function' ? value.bind(primitive) : value;
         }
@@ -65,11 +65,11 @@ class FieldProxy {
         return primitive;
     }
 
-    indexTable(primitive) {
+    indexTable(primitive, prop) {
         if (this.deRef(primitive).$nested) {
             throw new Error("indexTable only implemented for non-nested fields");
         }
-        return `${this.parent.$tablename}_${primitive}`
+        return `${this.parent.$tablename}_${prop.toLowerCase()}`
     }
 }
 
@@ -106,7 +106,7 @@ class ModelProxy {
     }
 
     set(target, prop, value) {
-        console.log("Model Set", prop, value);
+        // console.log("Model Set", prop, value);
 
         if (prop.toString().startsWith("$")) {
             return Reflect.set(...arguments);

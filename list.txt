@@ -1,0 +1,27 @@
+✗ ✓
+
+✓ Add primitive to root        
+✓ Add reflected object to root by value 
+✓ Add reflected array to root by value  
+✗ Add reflected object to root by reference 
+✗ Add reflected array to root by reference  
+✓ Add nested object to root    
+✓ Add nested array to root     
+✓ - Removes old array
+
+✗ Replace object in nested array removes previous object
+✗ Replace object in reflected array retains previous object
+✗ Replace nested object removes previous object
+✗ Replace reflected object retains previous object
+
+✓ No argument contructor 
+✓ Object constructor 
+✓ Empty array fields get instantiated
+
+✗ Class get (retrive object from db) 
+✗ - Get by index
+✗ - Get by values
+✗ - Get not instantiated
+✗ - Get previously instantiated
+
+✗ - Static method 'all'

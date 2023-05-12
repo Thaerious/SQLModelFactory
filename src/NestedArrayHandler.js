@@ -33,11 +33,6 @@ export default class NestedArrayHandler extends InstanceHandler {
      * Handles setting and storing values in an array field.
      */
     set(target, prop, value) {
-        console.log("AIH.SET");
-        console.log("- target", target);
-        console.log("- prop", prop);
-        console.log("- value", value);
-
         if (this.factory.isReflected(value)) {
             const aClass = this.factory.getClass(this.model);
             if (value instanceof aClass === false) {
@@ -106,8 +101,6 @@ export default class NestedArrayHandler extends InstanceHandler {
      * Used internally to create the array tables used by the proxies.
      */
     static createTable() {
-        console.log(this.model);
-
         const tableName = this.model.$classname.toLowerCase();
         const rootTable = this.model.$nested.parent;
 

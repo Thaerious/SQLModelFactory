@@ -12,7 +12,7 @@ export default class InstanceHandler {
      * @param {Map} instantiated - Previously constructed instances.
      * @param {Function} constructor - Instance constructor.
      */
-    constructor(factory, idx, tableName, model, map, constructor) {
+    constructor({factory, idx, tableName, model, map, constructor}) {
         this.factory = factory;
         this.idx = idx;
         this.tableName = tableName;

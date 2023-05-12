@@ -4,8 +4,8 @@ export default function expandModels(p00) {
     const p10 = pass10(p00);
     const p11 = pass11(p10);
     const p40 = pass40(p11);
-    // const p50 = pass50(p40);
-    return p40;
+    const p50 = pass50(p40);
+    return p50;
 }
 
 // Move nested to their own class

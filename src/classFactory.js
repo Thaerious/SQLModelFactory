@@ -3,55 +3,7 @@ import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import { extractClass, hasReference, classNameFromModel } from "./extractClass.js";
-
-/**
- * Create a list of key-value pairs of the object's fields.
- * Only fields that are specified on the model are included.
- * Fields not found on the model are ignored.
- */
-function listify(object, model) {
-    const list = [];
-    for (const key of Object.keys(object)) {
-        const value = object[key];
-        if (!model[key]) continue;
-        list.push({ key: key, value: value, model: model[key] });
-    }
-    return list;
-}
-
-/**
- * Remove values from any array fields and return them in a seperate deferred array.
- * These need to be built after the object because the root index needs to be known.
- * See: #processDeferred
- */
-function extractDeferred(list) {
-    const notDeferred = [];
-    const deferred = [];
-
-    for (const i in list) {
-        const data = list[i];
-
-        if (Array.isArray(data.value)) {
-            for (const i in data.value) {
-                deferred.push({
-                    key: data.key,
-                    value: data.value[i],
-                    model: data.model[0],
-                    index: i,
-                    type: 'array'
-                });
-            }
-        }
-        else if (data.model.startsWith("@_t")) {
-            deferred.push({ ...data, ...{ type: 'field' } });
-        }
-        else {
-            notDeferred.push(data);
-        }
-    }
-
-    return { notDeferred, deferred };
-}
+import ReflectedBaseClass from "./ReflectedBaseClass.js";
 
 /**
  * Replace reflected objects in the list with their index value.
@@ -96,6 +48,13 @@ function processDeferred(factory, deferred, target) {
 }
 
 export default function classFactory(factory, name, model) {
+    return class extends ReflectedBaseClass {
+        static factory = factory;
+        static instantiated = new Map();
+        static model = model;
+        static name = name;
+    }
+
     return class {
         static factory = factory;
         static instantiated = new Map();

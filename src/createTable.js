@@ -1,5 +1,3 @@
-import { extractClass } from "./extractClass.js";
-
 export default function createTable(factory, model) {
     const fields = [`idx INTEGER PRIMARY KEY AUTOINCREMENT`];
     const append = [...model.$append];

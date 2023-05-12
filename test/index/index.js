@@ -95,6 +95,7 @@ const models = {
 
     // set c4 game using a pojo object
     c4.game = { name: "steve's game" };
+    assert.ok(c4.game.idx);
 
     // the game was inserted in the DB thus can be retrieved    
     const g1 = Game.get(c4.game.idx);

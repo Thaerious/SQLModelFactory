@@ -1,4 +1,5 @@
 import InstanceHandler from "./InstanceHandler.js";
+import divideObject from "./divideObject.js";
 
 class ReflectiveTypeError extends Error {
     constructor(prop, value) {
@@ -14,61 +15,51 @@ class ReflectiveTypeError extends Error {
  * ridx : root (parent) index
  * oidx : index of the object being assigned
  */
-export default class ArrayInstanceHandler extends InstanceHandler {
+export default class ArrayInstanceHandler {
     /**
      * @param {ModelFactory} factory - Shared factory object that created this instance.
-     * @param {Integer} idx - The index of the object this belongs to.
+     * @param {Integer} ridx - The index of the object this belongs to (root-idx).
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
      * @param {Map} instantiated - Previously constructed instances.
      * @param {Function} constructor - Instance constructor.
      */
-    constructor({factory, idx, tableName, model, map, constructor}) {
-        super(factory, idx, tableName, model, map, constructor);
-        this.createTables();
+    constructor({factory, idx: ridx, tableName, model, indexModel, map, constructor}) {
+        this.factory = factory;
+        this.ridx = ridx;
+        this.tableName = tableName;
+        this.model = model;
+        this.indexModel = indexModel;
+        this.instantiated = map;
+        this.constructor = constructor;
+
+        return new Proxy([], this);
     }
 
     /**
      * Handles setting and storing values in an array field.
      */
-    set(target, prop, value) {
-        console.log("AIH.SET");
-        console.log("- target", target);
-        console.log("- prop", prop);
-        console.log("- value", value);
+    set(target, aidx, value) {
+        const div = divideObject(value);                
+        const oidx = this._setObjectIf(value);
 
-        if (this.factory.isReflected(value)) {
-            const aClass = this.factory.getClass(this.model);
-            if (value instanceof aClass === false) {
-                throw new ReflectiveTypeError(prop, value);
-            }
-            return this.setAndReflect(target, prop, value);
-        }
-        else if (Array.isArray(value)) {
-            throw new Error("todo?");
-        }
-        else if (typeof value === "object") {
-            const aClass = this.factory.getClass(this.model);
-            value.ridx = this.idx;
-            return this.setAndReflect(target, prop, new aClass(value));
-        }
+        this.factory.prepare(`
+            INSERT INTO ${this.indexModel.$tablename} (aidx, oidx, ridx)
+            VALUES (?, ?, ?)
+        `).run(aidx, oidx, this.ridx);
 
-        if (prop === "length") {
-            return Reflect.set(...arguments);
-        }
-
-        throw new TypeError(`Expected 'object' found '${typeof value}'`);
+        return Reflect.set(...arguments);
     }
 
-    setAndReflect(target, prop, value) {
-        this.prepare(`
-            INSERT OR REPLACE INTO ${this.tableName}
-            (aidx, ridx, oidx)
-            VALUES
-            (?, ?, ?)
-        `).run(prop, this.idx, value.idx);
+    _setObjectIf(value) {
+        if (!this.factory.isReflected(value)) {
+            return this.factory.prepare(`
+                INSERT INTO ${this.model.$tablename} (${div.keys})
+                VALUES (${div.placeHolders})
+            `).run(div.values).lastInsertRowid;
+        }        
 
-        return Reflect.set(target, prop, value);
+        return value.idx;
     }
 
     /**
@@ -90,14 +81,5 @@ export default class ArrayInstanceHandler extends InstanceHandler {
         }
 
         return Reflect.deleteProperty(...arguments);
-
-        // console.log("ARRAY PROP DELETE");
-        // if (prop in target) {
-        //     delete target[prop];
-        //     this.prepare(`
-        //         DELETE FROM ${this.tableName} WHERE aidx = ? AND ridx = ?
-        //     `).run(prop, this.idx);
-        //     return true;
-        // }
     }
 }

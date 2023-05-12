@@ -4,7 +4,8 @@ import fs from "fs";
 
 const models = {
     "Address": {
-        "city": "VARCHAR(64)"
+        "city": "VARCHAR(64)",
+        "postal": "CHAR(7)"
     },
     "Cred": {
         "alias": "VARCHAR(64)",
@@ -14,6 +15,7 @@ const models = {
         },
         "games": [{
             "name": "VARCHAR(32)",
+            "size": "Integer"
         }],
         "home": "@Address",
         "friends": ["@Cred"],
@@ -24,13 +26,12 @@ const DBPATH = mkdirif("test", "assets", "test.db");
 if (fs.existsSync(DBPATH)) fs.rmSync(DBPATH);
 
 const factory = ModelFactory.instance;
-// factory.options = { verbose: console.log };
+factory.options = { verbose: console.log };
 factory.dbFile = DBPATH;
-factory.createClasses(models);
+const { Address, Cred } = factory.createClasses(models);
 factory.createTables();
 
-console.log(factory.models.Cred.home.indexTable);
+const c1 = new Cred({ alias: "i am friend" });
+c1.home = { city: "Guelph" };
 
-const cred = new factory.classes.Cred();
-// console.log(cred);
-
+console.log(c1.home.idx);
