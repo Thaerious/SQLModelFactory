@@ -9,6 +9,13 @@
 ✓ Add nested array to root     
 ✓ - Removes old array
 
+✗ Delete a primitive field
+✗ Delete an object field
+✗ Set reflective object field to undefined
+✗ Set nested object field to undefined
+✗ Set reflective array field to undefined
+✗ Set nested array field to undefined
+
 ✗ Replace object in nested array removes previous object
 ✗ Replace object in reflected array retains previous object
 ✗ Replace nested object removes previous object

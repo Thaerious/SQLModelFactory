@@ -1,5 +1,6 @@
-import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
+import ArrayInstanceHandler from "./proxies/ArrayInstanceHandler.js";
 import divideObject from "./divideObject.js";
+import RootHandler from "./proxies/RootHandler.js";
 
 /**
  * Create a list of key-value pairs of the object's fields.
@@ -29,7 +30,11 @@ class ReflectedBaseClass {
             this.idx = args[0].idx;
         }
 
-        const proxy = new Proxy(this, this);
+        const proxy = new Proxy(new RootHandler({
+            factory: this.factory,
+            model: this.model, 
+            idx: this.idx
+        }), this);
 
         if (args[0] !== undefined && Object.keys(args[0]).length > 0) {
             this._constructFromData(proxy, args[0]);
@@ -47,6 +52,7 @@ class ReflectedBaseClass {
     get model() { return this.constructor.model }
     get factory() { return this.constructor.factory }
     get instantiated() { return this.constructor.instantiated }
+    get tablename() { return this.constructor.model.$tablename }
 
     _constructDefault() {
         return this.constructor.factory.prepare(
@@ -55,65 +61,10 @@ class ReflectedBaseClass {
     }
 
     _constructFromData(proxy, source) {
-        const list = listify(source, proxy.constructor.model);
-        console.log("list", list);
+        const list = listify(source, this.constructor.model);
 
         for (const item of list) {
             proxy[item.key] = item.value;
-        }
-    }
-
-
-    _updatePrim(prop, value) {
-        this.factory.prepare(`
-            UPDATE ${this.model.$tablename}
-            SET ${prop} = ?
-            WHERE idx = ${this.idx}
-        `).run(value);
-    }
-
-    _updateObject(prop, value) {
-        const div = divideObject(
-            value,
-            this.model[prop].deRef
-        );
-        
-        const aClass = this.factory.classes[this.model[prop].deRef.$classname];
-        const instance = new aClass(value);
-        const indexTable = `${this.model.$tablename}_${prop}`;
-
-        this.factory.prepare(`
-            INSERT OR REPLACE INTO ${indexTable}
-            (oidx, ridx) VALUES (?, ?)`
-        ).run(instance.idx, this.idx);
-
-        return instance;
-    }
-
-    _updateArray(prop, value) {
-        const indexTable = `${this.model.$tablename}_${prop}`;
-
-        this.factory.prepare(`
-            DELETE FROM ${indexTable}
-            WHERE ridx = ?`
-        ).run(this.idx);
-
-        if (value === undefined || value === null) return;
-
-        this[prop] = new ArrayInstanceHandler(
-            {
-                factory: this.factory,
-                idx: this.idx,
-                tableName: this.model[prop].$tablename,
-                model: this.model[prop].deRef,
-                indexModel: this.factory.models[`${this.model.$classname}_${prop}`],
-                map: this.instantiated,
-                constructor: this.factory.classes[this.model[prop].deRef.classname]
-            }
-        );
-
-        for (const i in value) {
-            this[prop][i] = value[i];
         }
     }
 
@@ -147,32 +98,6 @@ class ReflectedBaseClass {
         }
 
         return new this(row);
-    }
-
-    get(target, prop) {
-        return Reflect.get(...arguments);
-    }
-
-    set(target, prop, value) {
-        switch (this.model[prop].type) {
-            case "primitive":
-                this._updatePrim(prop, value);
-                return Reflect.set(...arguments);
-            case "nested_object":
-                this._updateObject(prop, value);
-                return Reflect.set(this, prop, this._updateObject(prop, value));
-            case "ref_object":
-                this._updateObject(prop, value);
-                return Reflect.set(this, prop, this._updateObject(prop, value));
-            case "nested_array":
-                this._updateArray(prop, value);
-                return Reflect.set(...arguments);
-            case "ref_array":
-                this._updateArray(prop, value);
-                return Reflect.set(...arguments);
-        }
-
-
     }
 }
 

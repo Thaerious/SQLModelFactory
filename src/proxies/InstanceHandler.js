@@ -1,23 +1,21 @@
-import { classNameFromModel, extractClass, hasReference, isNested } from "./extractClass.js";
+import { classNameFromModel, extractClass, hasReference, isNested } from "../extractClass.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
  */
 export default class InstanceHandler {
     /**
-     * @param {ModelFactory} factory - Shared factory object that created this instance.
-     * @param {Integer} idx - The index of the object this belongs to.
+     * @param {Object} parent - The object that owns the associated field.
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
      * @param {Map} instantiated - Previously constructed instances.
      * @param {Function} constructor - Instance constructor.
      */
-    constructor({factory, idx, tableName, model, map, constructor}) {
-        this.factory = factory;
-        this.idx = idx;
+    constructor({parent, tableName, model, map, constructor}) {
+        this.factory = parent.factory;
+        this.parent = parent;
         this.tableName = tableName;
         this.model = model;
-        this.instantiated = map;
         this.constructor = constructor;
     }
 
@@ -78,7 +76,7 @@ export default class InstanceHandler {
         this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
-            WHERE idx = ${this.idx}
+            WHERE idx = ${this.parent.idx}
         `).run(value);
     }
 
@@ -102,7 +100,7 @@ export default class InstanceHandler {
 
                 this.$prepare(`
                     DELETE FROM ${childTableName} WHERE ridx = ?
-                `).run(this.idx);
+                `).run(this.parent.idx);
             }
         }
     
@@ -116,19 +114,19 @@ export default class InstanceHandler {
 
         this.factory.prepare(`
             UPDATE ${parent} SET ${column} = NULL WHERE ${column} = ?
-        `).run(this.idx);
+        `).run(this.parent.idx);
     }
 
     _deleteThis() {
-        this.instantiated.delete(this.idx);
+        this.constructor.instantiated.delete(this.parent.idx);
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?
-        `).run(this.idx);
+        `).run(this.parent.idx);
     }
 
     exists() {
-        const all = this.prepare(`SELECT * FROM ${this.tableName} WHERE idx = ?`).all(this.idx);
+        const all = this.prepare(`SELECT * FROM ${this.tableName} WHERE idx = ?`).all(this.parent.idx);
         return all > 0;
     }
 

@@ -1,5 +1,4 @@
-import InstanceHandler from "./InstanceHandler.js";
-import divideObject from "./divideObject.js";
+import divideObject from "../divideObject.js";
 
 class ReflectiveTypeError extends Error {
     constructor(prop, value) {

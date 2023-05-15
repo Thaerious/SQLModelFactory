@@ -1,7 +1,7 @@
 import sqlifyList from "./sqlifyList.js";
 import divideObject from "./divideObject.js";
-import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
-import InstanceHandler from "./InstanceHandler.js";
+import ArrayInstanceHandler from "./proxies/ArrayInstanceHandler.js";
+import InstanceHandler from "./proxies/InstanceHandler.js";
 import { extractClass, hasReference, classNameFromModel } from "./extractClass.js";
 import ReflectedBaseClass from "./ReflectedBaseClass.js";
 
