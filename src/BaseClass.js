@@ -6,18 +6,16 @@ import { extractClass, hasReference } from "./extractClass.js";
 
 export default class BaseClass {
     constructor(...args) {
-        let deferred = [];
         if (!args[0] || Object.keys(args[0]).length === 0) {
             // no-arg or args[0] == {}
             this._constructDefault();
+            return this.constructor._doProxy(this, this.idx);
         } else {
-            deferred = this._constructFromData(args[0]);
+            const deferred = this._constructFromData(args[0]);
+            const proxy = this.constructor._doProxy(this, this.idx);
+            processDeferred(this.constructor.factory, deferred, proxy);
+            return proxy;
         }
-
-        const proxy = this.constructor._doProxy(this, this.idx);
-
-        processDeferred(this.constructor.factory, deferred, proxy);
-        return proxy;
     }
 
     static get tablename() {
@@ -118,8 +116,8 @@ export default class BaseClass {
                 "oidx": "INTEGER",      // object index (what is referred to)
                 "$append": [
                     `FOREIGN KEY (ridx)
-                 REFERENCES ${rootTable} (idx)
-                 ON DELETE CASCADE`
+                     REFERENCES ${rootTable} (idx)
+                     ON DELETE CASCADE`
                 ]
             },
             tablename
@@ -147,9 +145,9 @@ export default class BaseClass {
 
         const div = divideObject(conditions);
         const row = this.factory.prepare(`
-        SELECT * FROM  ${this.tablename} WHERE ${div.where}
-    `).get(div.values);
-
+            SELECT * FROM  ${this.tablename} WHERE ${div.where}
+        `).get(div.values);
+        
         if (!row) return undefined;
 
         if (this.instantiated.has(row.idx)) {
@@ -182,13 +180,13 @@ export default class BaseClass {
 
         if (!conditions) {
             return this.factory.prepare(`
-            SELECT * FROM  ${this.tablename}
-        `).all().map(row => this.get(row.idx));
+                SELECT * FROM  ${this.tablename}
+            `).all().map(row => this.get(row.idx));
         } else {
             const div = divideObject(conditions);
             return this.factory.prepare(`
-            SELECT * FROM  ${this.tablename} WHERE ${div.where}
-        `).all(div.values).map(row => this.get(row.idx));
+                SELECT * FROM  ${this.tablename} WHERE ${div.where}
+            `).all(div.values).map(row => this.get(row.idx));
         }
     }
 

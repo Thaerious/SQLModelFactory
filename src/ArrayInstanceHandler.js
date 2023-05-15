@@ -62,7 +62,7 @@ export default class ArrayInstanceHandler extends InstanceHandler {
         if (target[prop]) {
             if (model.$nested) {
                 this.factory.prepare(`
-                    DELETE FROM ${model.$indexTable} WHERE oidx = ?                
+                    DELETE FROM ${model.$indexTable} WHERE oidx = ?
                 `).run(target[prop].idx);
 
                 this.factory.prepare(`
@@ -72,14 +72,5 @@ export default class ArrayInstanceHandler extends InstanceHandler {
         }
 
         return Reflect.deleteProperty(...arguments);
-
-        // console.log("ARRAY PROP DELETE");
-        // if (prop in target) {
-        //     delete target[prop];
-        //     this.prepare(`
-        //         DELETE FROM ${this.tableName} WHERE aidx = ? AND ridx = ?
-        //     `).run(prop, this.idx);
-        //     return true;
-        // }
     }
 }

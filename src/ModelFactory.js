@@ -44,8 +44,8 @@ class ModelFactory {
     }
 
     get options() {
-        return this._sqlOptions;
-    }    
+        return { ...this._sqlOptions };
+    }
 
     /**
      * Returns true if 'object' is reflective.
@@ -81,7 +81,7 @@ class ModelFactory {
         if (name.startsWith("@")) name = name.substring(1);
         if (name.startsWith("[]")) name = name.substring(2);
         return this.models[name];
-    }    
+    }
 
     createTables() {
         for (const aClass in this.classes) {

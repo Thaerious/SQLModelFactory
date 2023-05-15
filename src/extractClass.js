@@ -33,11 +33,4 @@ function hasReference(value) {
     return extract != null;
 }
 
-function isNested(value) {
-    if (Array.isArray(value)) value = value.flat().join("");
-    const extract = /@[a-zA-Z0-9_]+/.exec(value);
-    if (!extract) return false;
-    return extract[0].startsWith("@_t");
-}
-
-export { extractClass, hasReference, isNested }
+export { extractClass, hasReference }

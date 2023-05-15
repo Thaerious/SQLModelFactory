@@ -30,10 +30,10 @@ setupTests(models, "Test is ModelFactory.isReflective", function () {
         });
         it("undefined", function () {
             assert.ok(!this.factory.isReflected(undefined));
-        });        
+        });
         it("null", function () {
             assert.ok(!this.factory.isReflected(null));
-        });    
+        });
         it("string", function () {
             assert.ok(!this.factory.isReflected(null));
         });      
