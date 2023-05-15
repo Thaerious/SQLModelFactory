@@ -201,12 +201,10 @@ export default class BaseClass {
     `).get(idx);
         
         const hnd = new InstanceHandler(
-            this.factory,
             row.idx,
             this.tablename,
             this.model,
-            this.instantiated,
-            this.constructor
+            this
         );
         this.instantiated.set(idx, new Proxy(target, hnd));
 
@@ -232,11 +230,9 @@ export default class BaseClass {
                 const instanceClass = this.factory.getClass(this.model[key]);
 
                 const ahnd = new ArrayInstanceHandler(
-                    this.factory,
                     idx,
                     childTableName,
                     this.model[key],
-                    this.instantiated,
                     instanceClass,
                 );
 
