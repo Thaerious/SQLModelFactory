@@ -14,7 +14,7 @@ const models = {
 }
 
 const DBPATH = mkdirif("test", "assets", "test.db");
-const factory = new ModelFactory(DBPATH, {});
+const factory = new ModelFactory(DBPATH, {verbose : console.log});
 const { Name, Person } = factory.createClasses(models);
 factory.createTables();
 
@@ -22,6 +22,9 @@ const steve = new Person({});
 const bill = new Person({});
 
 steve.partner = bill;
-// console.log(steve);
 
-assert.strictEqual(steve.partner, bill);
+factory.reset();
+const steve2 = Person.get(steve.idx);
+const bill2 = Person.get(bill.idx);
+
+console.log("partner", steve2.partner);

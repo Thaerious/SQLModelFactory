@@ -10,10 +10,14 @@ export default class InstanceHandler {
      * @param {Integer} model - The model object associated with this handler.
      * @param {Map} instantiated - Previously constructed instances.
      */
-    constructor({parent, model}) {
-        this.factory = parent.factory;
+    constructor({parent, model, value}) {
         this.parent = parent;
         this.model = model;
+        return new Proxy(value, this);
+    }
+
+    get factory() {
+        return this.parent.factory;
     }
 
     get tableName() {

@@ -33,11 +33,11 @@ export default class RootHandler {
                 this._updatePrim(prop, value);
                 return Reflect.set(...arguments);
             case "nested_object":
-                this._updateObject(prop, value);
-                return Reflect.set(this, prop, this._updateObject(prop, value));
+                this._updateObjectByRef(prop, value);
+                return Reflect.set(this, prop, this._updateObjectByRef(prop, value));
             case "ref_object":
-                this._updateObject(prop, value);
-                return Reflect.set(this, prop, this._updateObject(prop, value));
+                this._updateObjectByRef(prop, value);
+                return Reflect.set(...arguments);
             case "nested_array":
                 this._updateArray(prop, value);
                 return Reflect.set(...arguments);
@@ -56,31 +56,15 @@ export default class RootHandler {
         `).run(value);
     }
 
-    _updateObject(prop, value) {
-        const div = divideObject(
-            value,
-            this.model[prop].deRef
-        );
-
-        const aClass = this.factory.classes[this.model[prop].deRef.$classname];
-        const instance = new aClass(value);
+    _updateObjectByRef(prop, value) {
         const indexTable = `${this.model.$tablename}_${prop}`;
 
         this.factory.prepare(`
             INSERT OR REPLACE INTO ${indexTable}
             (oidx, ridx) VALUES (?, ?)`
-        ).run(instance.idx, this.idx);
+        ).run(value.idx, this.idx);
 
-        const proxy = new InstanceHandler({
-            parent: this,
-            tableName: this.model[prop].$tablename,
-            model: this.model[prop].deRef,
-            indexModel: this.factory.models[`${this.model.$classname}_${prop}`],
-            map: this.instantiated,
-            constructor: this.factory.classes[this.model[prop].deRef.classname]
-        });
-
-        return proxy;
+        return value;
     }
 
     _updateArray(prop, value) {

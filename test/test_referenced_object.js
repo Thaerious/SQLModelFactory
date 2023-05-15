@@ -43,7 +43,7 @@ setupTests(models, "Construct empty objects", function () {
     });
 });
 
-setupTests(models, "Fill in by object", function () {
+setupTests(models, "Assign reflected object to field ", function () {
     before(function () {
         this.steve = new this.classes.Person({});
         this.bill = new this.classes.Person({});
@@ -58,5 +58,12 @@ setupTests(models, "Fill in by object", function () {
 
     it("value is assigned in object", function () {
         assert.strictEqual(this.steve.partner, this.bill);
+    });
+
+    it("objects are still equal after reset", function () {
+        this.factory.reset();
+        const steve = this.classes.Person.get(this.steve.idx);
+        const bill = this.classes.Person.get(this.bill.idx);
+        assert.strictEqual(steve.partner, bill);
     });
 });

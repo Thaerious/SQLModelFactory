@@ -24,6 +24,8 @@ function listify(object, model) {
 
 class ReflectedBaseClass {
     constructor(...args) {
+        console.trace("constructor", args[0]);
+        // If the source is reflected (has .idx) then no DB insertion takes place.
         if (!args[0].idx) { // todo check that table has a matching idx value and args class matches this
             this.idx = this._constructDefault();
         } else {
@@ -32,7 +34,7 @@ class ReflectedBaseClass {
 
         const proxy = new Proxy(new RootHandler({
             factory: this.factory,
-            model: this.model, 
+            model: this.model,
             idx: this.idx
         }), this);
 
@@ -53,7 +55,7 @@ class ReflectedBaseClass {
     static get model() { return this.model }
     static get factory() { return this.factory }
     static get instantiated() { return this.instantiated }
-    static get tablename() { return this.model.$tablename }    
+    static get tablename() { return this.model.$tablename }
 
     /**
      * Clear previously instantiated objects.
@@ -89,6 +91,7 @@ class ReflectedBaseClass {
      * @param {Integer | Object} conditions - Selector for which row to retrieve.
      */
     static get(conditions) {
+        console.log("get", conditions);
         if (typeof conditions === "number") {
             if (this.instantiated.has(conditions)) {
                 return this.instantiated.get(conditions);
@@ -107,7 +110,29 @@ class ReflectedBaseClass {
             return this.instantiated.get(row.idx);
         }
 
-        return new this(row);
+        const target = {};
+        Object.assign(target, this._loadObjectFields(row.idx));
+        return new this(target);
+    }
+
+    static _loadObjectFields(idx) {
+        const fields = {};
+
+        for (const key of Object.keys(this.model)) {
+            if (this.model[key].isRef) {
+                const tablename = `${this.model.$tablename}_${key}`;
+                const row = this.factory.prepare(`
+                    SELECT * FROM  ${tablename} WHERE ridx = ?
+                `).get(idx);
+
+                if (row) {
+                    const aClass = this.factory.classes[this.model[key].deRef.$classname];
+                    fields[key] = aClass.get(row.oidx);
+                }
+            }
+        }
+
+        return fields;
     }
 }
 
