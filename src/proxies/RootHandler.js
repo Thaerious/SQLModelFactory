@@ -1,3 +1,7 @@
+import divideObject from "../divideObject.js";
+import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
+import InstanceHandler from "./InstanceHandler.js";
+
 export default class RootHandler {
     get tablename() { return this.model.$tablename }
 
@@ -23,6 +27,7 @@ export default class RootHandler {
     set(_, prop, value) {
         if (!this.model[prop]) return Reflect.set(...arguments);
 
+        console.log("set", prop, this.model[prop].type);
         switch (this.model[prop].type) {
             case "primitive":
                 this._updatePrim(prop, value);
@@ -66,7 +71,7 @@ export default class RootHandler {
             (oidx, ridx) VALUES (?, ?)`
         ).run(instance.idx, this.idx);
 
-        const proxy = new ArrayInstanceHandler({
+        const proxy = new InstanceHandler({
             parent: this,
             tableName: this.model[prop].$tablename,
             model: this.model[prop].deRef,

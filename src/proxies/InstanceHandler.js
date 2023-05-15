@@ -9,14 +9,15 @@ export default class InstanceHandler {
      * @param {Integer} tableName - The table name that contains child entries.
      * @param {Integer} model - The model object associated with this handler.
      * @param {Map} instantiated - Previously constructed instances.
-     * @param {Function} constructor - Instance constructor.
      */
-    constructor({parent, tableName, model, map, constructor}) {
+    constructor({parent, model}) {
         this.factory = parent.factory;
         this.parent = parent;
-        this.tableName = tableName;
         this.model = model;
-        this.constructor = constructor;
+    }
+
+    get tableName() {
+        return this.model.$tablename;
     }
 
     /**
@@ -118,7 +119,7 @@ export default class InstanceHandler {
     }
 
     _deleteThis() {
-        this.constructor.instantiated.delete(this.parent.idx);
+        this.prototype.instantiated.delete(this.parent.idx);
 
         return this.$prepare(`
             DELETE FROM ${this.$tableName} WHERE idx = ?

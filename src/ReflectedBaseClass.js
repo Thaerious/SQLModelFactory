@@ -42,10 +42,6 @@ class ReflectedBaseClass {
 
         this.instantiated.set(this.idx, proxy);
 
-        console.log("------");
-        console.log(args[0]);
-        console.log(proxy);
-
         return proxy;
     }
 
@@ -53,6 +49,20 @@ class ReflectedBaseClass {
     get factory() { return this.constructor.factory }
     get instantiated() { return this.constructor.instantiated }
     get tablename() { return this.constructor.model.$tablename }
+
+    static get model() { return this.model }
+    static get factory() { return this.factory }
+    static get instantiated() { return this.instantiated }
+    static get tablename() { return this.model.$tablename }    
+
+    /**
+     * Clear previously instantiated objects.
+     * Cause all constructors and getters to return new objects.
+     * Externally stored objects will no longer be reference equal.
+     */
+    static reset() {
+        this.instantiated.clear();
+    }
 
     _constructDefault() {
         return this.constructor.factory.prepare(

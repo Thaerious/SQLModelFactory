@@ -50,6 +50,17 @@ class ModelFactory {
     }    
 
     /**
+     * Clear previously instantiated objects for all classes.
+     * Cause all constructors and getters to return new objects.
+     * Externally stored objects will no longer be reference equal.
+     */
+    reset() {
+        for (const aClass in this.classes) {
+            this.classes[aClass].reset();
+        }
+    }
+
+    /**
      * Returns true if 'object' is reflective.
      * Reflective objects are instances of a class created by this factory,
      * and has the 'idx' field.
