@@ -1,5 +1,3 @@
-import { hasReference, extractClass, classNameFromModel } from "./extractClass.js";
-
 /**
  * Divide an object into keys, values, and placeholders for use in SQL statements.
  * 
@@ -19,16 +17,14 @@ import { hasReference, extractClass, classNameFromModel } from "./extractClass.j
  *     `SELECT * FROM table WHERE ${div.where}`
  * ).all(div.values);
  */
-function divideObject(object, model = {}) {
+function divideObject(object) {
     const divided = {
         keys: [],     // keys joined
         values: [],
-        columns: [],  // keys not joined        
     };
 
     for (const key of Object.keys(object)) {
         divided.keys.push(key);
-        divided.columns.push(key);
 
         if (typeof object[key] === "object" && object[key].idx !== undefined) {            
             divided.values.push(object[key].idx);

@@ -2,7 +2,6 @@ import assert from "assert";
 import ModelFactory from "../src/ModelFactory.js";
 import ParseArgs from "@thaerious/parseargs";
 import setupTests from "./util/setup.js";
-import { classNameFromModel } from "../src/extractClass.js";
 
 const args = new ParseArgs().run();
 
@@ -34,10 +33,9 @@ const models = {
 }
 
 setupTests(models, "Test setting array values on reflective object", function () {
-
     describe("check rounds table", function () {
         it("", function () {
-            const className = classNameFromModel(this.factory.models.GameModel.rounds);
+            const className = this.factory.models.GameModel.rounds.$classname;
             console.log("className", className);
         });
     });
@@ -116,7 +114,7 @@ setupTests(models, "Test setting array values on reflective object", function ()
         });
 
         it("db indices deleted", function () {
-            const table = this.factory.classes.Cred.tableName;
+            const table = this.factory.classes.Cred.tablename;
             const all = this.factory.prepare(`SELECT * FROM ${table} WHERE idx = ?`).all(this.adam.idx);
             assert.strictEqual(all.length, 0);
         });        

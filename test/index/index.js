@@ -5,6 +5,8 @@ import { mkdirif } from "@thaerious/utility";
 import ModelFactory from "../../src/ModelFactory.js";
 import assert from "assert";
 
+
+//Describe one or models with a JS object.
 const models = {
     "Game": {
         "name": "VARCHAR(32)",
@@ -24,9 +26,14 @@ const models = {
 (() => {
     const DBPATH = mkdirif("test", "assets", "test.db");
     const factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
+    
+    // Create JS classes and SQL tables using the ModelFactory class.
+    // There will be a classes field in the factory.
     const { Game, Cred } = factory.createClasses(models);
+    assert.ok(factory.classes);
     factory.createTables();
 
+    // Classes can be exteded, in the DB they are treated as the base class
     class XCred extends Cred {
         constructor(username, email) {
             return super({ username: username, email: email });
@@ -36,13 +43,16 @@ const models = {
     const c1 = new XCred("ed", "ed@there.ca");
     const c2 = Cred.get({ "username": "ed" });
 
-    // closing the factory will just cause it to reopen, but it's slower
+    // closing the factory will just cause it to reopen, but it's slower.
+    // It will have no other effect on the stored instances.
     factory.close();
 
     // retrieved objects (#get) will pull from previously instatiated objects
     assert.strictEqual(c1, c2);
 
+    // Create instances by passing in the field values.    
     const c3 = new Cred({ username: "bill", email: "bill@mail.com" });
+    
     c1.friends.push(c3);
     c1.friends.push(c1);
 
@@ -72,8 +82,8 @@ const models = {
 })();
 
 // The factory in this call is not the same as the previous factory
-// Tables not created here, they were created above
-// Objects retrieved should share values but not references
+// Tables not created here, they were created above.
+// Objects retrieved will share values but are not reference identical.
 (() => {
     const DBPATH = mkdirif("test", "assets", "test.db");
     ModelFactory.instance.dbFile = DBPATH;

@@ -1,7 +1,6 @@
 import sqlite3 from "better-sqlite3";
 import classFactory from "./classFactory.js";
 import expandModels from "./expandModels.js";
-import { classNameFromModel } from "./extractClass.js";
 
 class ModelFactoryError extends Error {
     constructor(cause, expression) {
@@ -71,13 +70,17 @@ class ModelFactory {
      * Returns undefined if no class found.
      */
     getClass(name) {
-        const classname = classNameFromModel(name);
-        return this.classes[classname];
+        if (Array.isArray(name)) name = name[0];
+        if (name.startsWith("@")) name = name.substring(1);
+        if (name.startsWith("[]")) name = name.substring(2);
+        return this.classes[name];
     }
 
     getModel(name) {
-        const classname = classNameFromModel(name);
-        return this.models[classname];
+        if (Array.isArray(name)) name = name[0];
+        if (name.startsWith("@")) name = name.substring(1);
+        if (name.startsWith("[]")) name = name.substring(2);
+        return this.models[name];
     }    
 
     createTables() {
@@ -121,7 +124,10 @@ class ModelFactory {
         }
 
         for (const name in expandedModels) {
-            this.classes[name] = classFactory(this, name, expandedModels[name]);
+            const expandedModel = expandedModels[name];
+            expandedModel['$tablename'] = expandedModel['$tablename'] || name.toLowerCase();
+            expandedModel['$classname'] = expandedModel['$classname'] || name;
+            this.classes[name] = classFactory(this, expandedModel);
         }
         return this.classes;
     }

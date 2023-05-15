@@ -1,7 +1,6 @@
 import assert from "assert";
 import ParseArgs from "@thaerious/parseargs";
 import setupTests from "./util/setup.js";
-import { classNameFromModel } from "../src/extractClass.js";
 
 const args = new ParseArgs().run();
 
@@ -17,7 +16,7 @@ const models = {
     }
 }
 
-// An nested class is any class was declared as a value of another class.
+// A nested class is any class was declared as a value of another class.
 setupTests(models, "deleting an instance removes all nested instances from the DB", function () {
     before(function () {
         this.steve = new this.classes.Cred({
@@ -45,38 +44,38 @@ setupTests(models, "deleting an instance removes all nested instances from the D
 
     describe("before delete", function () {
         it("check nested field row count", function () {
-            const nestedClass = this.bill.name.constructor;
-            const all = nestedClass.all();
+            const NameClass = this.bill.name.constructor;
+            const all = NameClass.all();
             assert.strictEqual(all.length, 2);
         });
 
         it("check nested array row count", function () {
-            const nestedClass = this.bill.games[0].constructor;
-            const all = nestedClass.all();
+            const GamesClass = this.bill.games[0].constructor;
+            const all = GamesClass.all();
             assert.strictEqual(all.length, 4);
         });
     });
 
-    describe("delete the root object", function () {
+    describe("delete a root object", function () {
         before(function () {
             this.steve.$delete();
         });
 
-        it("nested field values deleted", function () {
-            const nestedClass = this.bill.name.constructor;
-            const all = nestedClass.all();
+        it("nested field values from the deleted object are also deleted from the DB", function () {
+            const NameClass = this.bill.name.constructor;
+            const all = NameClass.all();
             assert.strictEqual(all.length, 1);
         });
 
-        it("nested array values deleted", function () {
-            const nestedClass = this.bill.games[0].constructor;
-            const all = nestedClass.all();
+        it("nested array values from the deleted object are also deleted from the DB", function () {
+            const GamesClass = this.bill.games[0].constructor;
+            const all = GamesClass.all();
             assert.strictEqual(all.length, 2);
         });
     });
 });
 
-setupTests(models, "[2] deleting a nested field", function () {
+setupTests(models, "deleting a nested field", function () {
     before(function () {
         console.log(this.factory.models);
         this.steve = new this.classes.Cred({
@@ -93,10 +92,8 @@ setupTests(models, "[2] deleting a nested field", function () {
 
     describe("delete the nested object field", function () {
         before(function () {
-            this.nameConstructor = this.steve.name.constructor;
-            this.factory.options = {verbose : console.log}
+            this.NameClass = this.steve.name.constructor;
             delete this.steve.name;
-            console.log(this.steve);
         });
 
         it("removed from the object", function () {
@@ -105,17 +102,17 @@ setupTests(models, "[2] deleting a nested field", function () {
         });
 
         it("removed from the DB", function () {
-            const all = this.nameConstructor.all();
+            const all = this.NameClass.all();
             assert.strictEqual(all.length, 0);
-        });        
+        });
 
-        it("returns true on second delete", function () {
+        it("returns true on second delete (in line with standard functionality)", function () {
             assert.ok(delete this.steve.name);
         });
     });
 });
 
-setupTests(models, "[3] deleting a nested array value", function () {
+setupTests(models, "deleting a nested array value", function () {
     before(function () {
         this.steve = new this.classes.Cred({
             name: {
@@ -152,9 +149,5 @@ setupTests(models, "[3] deleting a nested array value", function () {
 
             assert.strictEqual(all.length, 1);
         });
-
-        // it("returns true on second delete", function () {
-        //     assert.ok(delete this.steve.games[0]);
-        // });
     });
 });

@@ -1,5 +1,5 @@
 /**
- * Look for nested models and move them to their own class/model.
+ * Look for nested models and move them to their own model.
  */
 export default function expandModels(models) {
     let i = 0;

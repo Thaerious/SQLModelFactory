@@ -1,4 +1,4 @@
-import { classNameFromModel, extractClass, hasReference, isNested } from "./extractClass.js";
+import { extractClass } from "./extractClass.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -105,7 +105,7 @@ export default class InstanceHandler {
                 `).run(this.idx);
             }
         }
-    
+
         if (this.model.$nested) this._removeFromParent();
         this._deleteThis();
     }
