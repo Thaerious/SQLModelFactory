@@ -226,7 +226,6 @@ export default class BaseClass {
             if (Array.isArray(this.model[key])) {
                 const childTableName = `${this.tablename}_${key}`;
                 const array = this._loadArray(idx, childTableName, this.model[key]);
-
                 const instanceClass = this.factory.getClass(this.model[key]);
 
                 const ahnd = new ArrayInstanceHandler(

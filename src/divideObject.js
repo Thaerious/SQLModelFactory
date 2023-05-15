@@ -17,7 +17,7 @@
  *     `SELECT * FROM table WHERE ${div.where}`
  * ).all(div.values);
  */
-function divideObject(object) {
+export default function divideObject(object) {
     const divided = {
         keys: [],     // keys joined
         values: [],
@@ -34,20 +34,9 @@ function divideObject(object) {
         }
     }
 
-    divided.where = where(divided.keys);
+    divided.where = divided.keys.map(e => `${e} = ?`).join(" AND ");
     divided.placeHolders = new Array(divided.keys.length).fill("?").join();
     divided.keys = divided.keys.join();
 
     return divided;
 }
-
-function where(keys) {
-    const array = [];
-    for (const key of keys) {
-        array.push(`${key} = ?`);
-    }
-
-    return array.join(" AND ");
-}
-
-export default divideObject;

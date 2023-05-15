@@ -17,7 +17,7 @@
  *     `SELECT * FROM table WHERE ${div.where}`
  * ).all(div.values);
  */
-function sqlifyList(list, model = {}) {
+function sqlifyList(list) {
     const divided = {
         values: [],
         columns: [],
