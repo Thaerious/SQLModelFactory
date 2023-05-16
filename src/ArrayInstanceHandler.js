@@ -56,7 +56,6 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * Handles removing (deleting) data from an array field.
      */
     deleteProperty(target, prop) {
-        console.log("ARRAY INSTANCE DELETE PROPERTY");
         const model = this.factory.getModel(this.model)
 
         if (target[prop]) {

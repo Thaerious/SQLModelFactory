@@ -197,8 +197,8 @@ export default class BaseClass {
      */
     static _doProxy(target, idx) {
         const row = this.factory.prepare(`
-        SELECT * FROM  ${this.tablename} WHERE idx = ?
-    `).get(idx);
+            SELECT * FROM  ${this.tablename} WHERE idx = ?
+        `).get(idx);
         
         const hnd = new InstanceHandler(
             row.idx,

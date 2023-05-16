@@ -47,34 +47,62 @@ export default class InstanceHandler {
     set(target, prop, value) {
         if (prop === "idx") throw new TypeError(`Cannot assign to read only property ${prop}`);
         if (prop === "ridx") throw new TypeError(`Cannot assign to read only property ${prop}`);
-
+console.log("set");
+console.log("set", prop);
+console.log("set", value);
+        
         if (this.model.hasOwnProperty(prop)) {
-            const ref = extractClass("", this.model[prop]);
-
+console.log(this.model[prop]);
             if (typeof value !== "object") {
-                this._setVal(prop, value);
-                return Reflect.set(...arguments);
+console.log('[a]');
+                return this._setPrim(...arguments);
             }
             else if (this.factory.isReflected(value)) {
-                const aClass = this.factory.getClass(this.model[prop]);
-                if (value instanceof aClass === false) {
-                    throw new Error(`Reflective type error: expected ${aClass.name} found ${value.constructor.name}`);
-                }
-
-                this._setVal(prop, value.idx);
-                return Reflect.set(...arguments);
-            } else {
-                const aClass = this.factory.getClass(this.model[prop]);
-                const instance = new aClass(value);
-                this._setVal(prop, instance.idx);
-                return Reflect.set(target, prop, instance);
+console.log('[b]');
+                return this._setRef(...arguments);
+            }
+            else {
+console.log('[c]');
+                return this._setNest(...arguments);
             }
         }
 
         return Reflect.set(...arguments);
     }
 
-    _setVal(prop, value) {
+    _setPrim(_, prop, value) {
+        this._updateDB(prop, value);
+        return Reflect.set(...arguments);
+    }
+
+    _setNest(target, prop, value) {
+        console.log('[0]', value === undefined);
+        if (value === undefined) {
+            console.log("[1]");
+            target[prop].delete();
+            target[prop].$delete();
+            return Reflect.set(target, prop, instance);
+        }
+        else {
+            console.log("[2]");
+            const aClass = this.factory.getClass(this.model[prop]);
+            const instance = new aClass(value);
+            this._updateDB(prop, instance.idx);
+            return Reflect.set(target, prop, instance);
+        }        
+    }
+
+    _setRef(_, prop, value) {
+        const aClass = this.factory.getClass(this.model[prop]);
+        if (value instanceof aClass === false) {
+            throw new Error(`Reflective type error: expected ${aClass.name} found ${value.constructor.name}`);
+        }
+
+        this._updateDB(prop, value.idx);
+        return Reflect.set(...arguments);
+    }
+
+    _updateDB(prop, value) {
         this.prepare(`
             UPDATE ${this.tableName}
             SET ${prop} = ?
@@ -84,8 +112,6 @@ export default class InstanceHandler {
 
     deleteProperty(target, prop) {
         if (target[prop]) {
-            const propModel = target[prop].model;
-
             if (target[prop].model.$nested) {
                 target[prop].delete();
             }

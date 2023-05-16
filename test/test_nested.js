@@ -17,7 +17,7 @@ const models = {
 }
 
 // A nested class is any class was declared as a value of another class.
-setupTests(models, "deleting an instance removes all nested instances from the DB", function () {
+setupTests(models, "test nested objects", function () {
     before(function () {
         this.steve = new this.classes.Cred({
             name: {
@@ -75,9 +75,8 @@ setupTests(models, "deleting an instance removes all nested instances from the D
     });
 });
 
-setupTests(models, "deleting a nested field", function () {
+setupTests(models, "deleting a nested object field", function () {
     before(function () {
-        console.log(this.factory.models);
         this.steve = new this.classes.Cred({
             name: {
                 first: "steve",
@@ -94,6 +93,43 @@ setupTests(models, "deleting a nested field", function () {
         before(function () {
             this.NameClass = this.steve.name.constructor;
             delete this.steve.name;
+        });
+
+        it("removed from the object", function () {
+            delete this.steve.name;
+            assert.strictEqual(this.steve.name, undefined);
+        });
+
+        it("removed from the DB", function () {
+            const all = this.NameClass.all();
+            assert.strictEqual(all.length, 0);
+        });
+
+        it("returns true on second delete (in line with standard functionality)", function () {
+            assert.ok(delete this.steve.name);
+        });
+    });
+});
+
+setupTests(models, "[*] set nested object field to undefined", function () {
+    before(function () {
+        this.steve = new this.classes.Cred({
+            name: {
+                first: "steve",
+                last: "steverson"
+            },
+            games: [
+                { name: "steve's first game" },
+                { name: "steve's second game" },
+            ]
+        });        
+    });
+
+    describe("delete the nested object field", function () {
+        before(function () {
+            this.NameClass = this.steve.name.constructor;
+            this.factory.options = {verbose : console.log}
+            this.steve.name = undefined;
         });
 
         it("removed from the object", function () {
