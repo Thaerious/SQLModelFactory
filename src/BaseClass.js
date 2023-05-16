@@ -57,74 +57,6 @@ export default class BaseClass {
     }
 
     /**
-    * Create all tables.
-    */
-    static createTables() {
-        return this._createObjectTable(this.model, this.tablename);
-    }
-
-    /**
-    * Used internally to create the object tables used by the proxies.
-    */
-    static _createObjectTable(model, tablename) {
-        this._createTable(
-            model,
-            tablename,
-            [`idx INTEGER PRIMARY KEY AUTOINCREMENT`],
-        );
-    }
-
-    /**
-    * Used internally to create the DB tables used by the proxies.
-    */
-    static _createTable(model, tablename, fields = [], appends = []) {
-        for (const key of Object.keys(model)) {
-            if (key === "$append") {
-                for (const v of model[key]) fields.push(v);
-            }
-            else if (hasReference(model[key])) {
-                // a known @class RHS rule
-                const extract = extractClass(key, model[key]);
-                fields.push(`${key} ${extract.column}`);
-                appends.push(extract.foreignKey);
-            }
-            else if (Array.isArray(model[key])) {
-                this.factory.getModel(model[key]).$indexTable = `${tablename}_${key}`;
-                this._createArrayIndexTable(`${tablename}_${key}`, tablename);
-            }
-            else if (typeof model[key] === "string" && key[0] !== '$') {
-                // nested class w/o @reference
-                if (model[key] === '@') throw new Error();
-                fields.push(`${key} ${model[key]}`);
-            }
-        }
-
-        const columns = [...fields, ...appends].join(",\n\t");
-        const statement = this.factory.prepare(`CREATE TABLE IF NOT EXISTS ${tablename}(\n\t${columns}\n)`);
-        statement.run();
-        return statement;
-    }
-
-    /**
-     * Used internally to create the array tables used by the proxies.
-     */
-    static _createArrayIndexTable(tablename, rootTable) {
-        this._createTable(
-            {
-                "aidx": "VARCHAR(64)",  // array index (in js object)
-                "ridx": "INTEGER",       // parent/root index (what is referring)
-                "oidx": "INTEGER",      // object index (what is referred to)
-                "$append": [
-                    `FOREIGN KEY (ridx)
-                     REFERENCES ${rootTable} (idx)
-                     ON DELETE CASCADE`
-                ]
-            },
-            tablename
-        );
-    }
-
-    /**
      * Retrieve a single object from the DB.
      * If there is no associated DB entry returns 'undefined'.
      * 
@@ -284,19 +216,21 @@ export default class BaseClass {
     }
 }
 
-
 /**
  * Create a list of key-value pairs of the object's fields.
  * Only fields that are specified on the model are included.
  * Fields not found on the model are ignored.
  */
-function listify(object, model) {
+function listify(target, model) {
+    console.log("listify ***************");
     const list = [];
-    for (const key of Object.keys(object)) {
-        const value = object[key];
+    for (const key of Object.keys(target)) {
+        const value = target[key];
+        console.log(key, model[key]);
         if (!model[key]) continue;
         list.push({ key: key, value: value, model: model[key] });
     }
+    console.log(list);
     return list;
 }
 

@@ -1,38 +1,22 @@
 import { mkdirif } from "@thaerious/utility";
 import ModelFactory from "../../src/ModelFactory.js";
+import createTable from "../../src/createTable.js";
+import Model from "../../src/Model.js";
 
 const models = {
-    "GameModel": {
-        "modelname": "VARCHAR(32)",
-        "owner": "@Cred",
-        "rounds": [{
-            "col": [{
-                "category": "VARCHAR(64)",
-                "row": [{
-                    "value": "INTEGER",
-                    "question": "VARCHAR(256)",
-                    "answer": "VARCHAR(256)",
-                }]
-            }]
-        }],
-        "$append": [
-            "UNIQUE(modelname, owner)"
-        ]
+    "Game": {
+        "name": "VARCHAR(32)",
+        "creator": "@Cred NOT NULL"
     },
     "Cred": {
         "username": "VARCHAR(32)",
         "email": "VARCHAR(64)",
-        "created": "DATE DEFAULT (datetime('now','localtime'))",
-        "games": ["@GameModel"],
-        "friends": ["@Cred"]
+        "friends": ["@Cred"],
+        "nicknames": [{ "value": "VARCHAR(32)" }]
     }
 }
 
 const DBPATH = mkdirif("test", "assets", "test.db");
 const factory = new ModelFactory(DBPATH, {});
-const { Game, Cred } = factory.createClasses(models);
-factory.createTables();
 
-// console.log(factory.models);
-console.log(factory.models.GameModel);
-console.log(factory.models.GameModel.owner);
+factory.createTables(models);

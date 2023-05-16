@@ -2,6 +2,7 @@ import sqlite3 from "better-sqlite3";
 import classFactory from "./classFactory.js";
 import expandModels from "./expandModels.js";
 import Model from "./Model.js";
+import createTable from "./createTable.js";
 
 class ModelFactoryError extends Error {
     constructor(cause, expression) {
@@ -84,9 +85,11 @@ class ModelFactory {
         return this.models[name];
     }
 
-    createTables() {
-        for (const aClass in this.classes) {
-            this.classes[aClass].createTables();
+    createTables(models) {
+        this.models = new Model(models) || this.models;
+
+        for (const i in this.models) {      
+            createTable(this, this.models[i]);
         }
     }
 
@@ -117,12 +120,13 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClasses(models) {
-        this.models = new Model(models);
+        this.models = new Model(models) || this.models;
+
         for (const name in this.models) {
-            this.classes[name] = classFactory(this, this.models);
+            this.classes[name] = classFactory(this, this.models[name]);
         }
         return this.classes;
     }
 }
 
-export { ModelFactory as default, expandModels };
+export { ModelFactory as default };

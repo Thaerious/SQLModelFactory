@@ -1,29 +1,25 @@
 import expandModels from "./expandModels.js";
 
-class ValueProxy {
+class Value {
     constructor(value, root) {
+        this.root = root;
         this.value = value;
     }
 
-    get(target, prop) {
-        if (prop === "$deRef") return this.$deRef(target);
-        if (!this.model[prop]) return Reflect.get(...arguments);
-
-        if (!value && this[prop]) {
-            return this[prop](primitive, prop);
-        } else {
-            return typeof value === 'function' ? value.bind(primitive) : value;
-        }
-
-        return new Proxy(this.model[prop], new ModelProxy(this.model[prop], this.root));
+    [Symbol.toPrimitive]() {
+        return this.value;
     }
 
-    $deRef(name) {        
+    deRef() {
+        let name = this.value;
         if (Array.isArray(name)) name = name[0];
         if (name.startsWith("@")) name = name.substring(1);
         if (name.startsWith("[]")) name = name.substring(2);
-        return new Proxy(this.model[name], new ModelProxy(this.model[name], this.root));
-    }    
+        return new Proxy(this.root[name], new ModelProxy(this.root[name], this.root));
+    }
+
+    isArray() {
+    }
 }
 
 class ModelProxy {
@@ -32,14 +28,36 @@ class ModelProxy {
         this.model = model;
     }
 
-    get(target, prop) {
-        if (prop === "$deRef") return this.$deRef(target);
-        if (!this.model[prop]) return Reflect.get(...arguments);
-
-        if (typeof this.model[prop] === "string") {
-            return new ValueProxy(this.model[prop], this.root);
+    get(_, prop) {
+        if (prop.startsWith("$")) {
+            if (this[prop]) return this[prop].bind(this);
+            return this.model[prop];
         }
-        return new Proxy(this.model[prop], new ModelProxy(this.model[prop], this.root));
+
+        let value = this.model[prop];
+        if (Array.isArray(value)) value = value[0];
+
+        if (typeof value === "object") {
+            return new Proxy(value, new ModelProxy(value, this.root));
+        }
+        else if (typeof value === "string") {
+            return new Value(this.model[prop], this.root);
+        }
+        else {
+            return undefined;
+        }
+    }
+
+    $isReference(prop) {
+        const value = this.model[prop];
+        if (typeof value !== "string") return false;
+        const extract = /@[a-zA-Z0-9_]+/.exec(value);
+        return extract != null;
+    }
+
+    $isArray(prop) {
+        const value = this.model[prop];
+        return Array.isArray(value);
     }
 }
 
