@@ -33,7 +33,6 @@ const factory = new ModelFactory(DBPATH, {});
 const { Game, Cred } = factory.createClasses(models);
 factory.createTables();
 
-console.log(factory.dbFile);
-let a = factory.dbFile;
-a = "";
-console.log(factory.dbFile);
+// console.log(factory.models);
+console.log(factory.models.GameModel);
+console.log(factory.models.GameModel.owner);

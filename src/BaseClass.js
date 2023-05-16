@@ -19,7 +19,7 @@ export default class BaseClass {
     }
 
     static get tablename() {
-        return this.model.$classname.toLowerCase();
+        return this.model.$tablename;
     }
 
     /**

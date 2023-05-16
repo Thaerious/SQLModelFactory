@@ -5,9 +5,11 @@ export default function expandModels(models) {
     let i = 0;
     const root = { ...models };
 
-    for (const modelName in models) {
-        const model = expandModel(modelName, models[modelName]);
-        root[modelName] = model;
+    for (const name in models) {
+        const model = expandModel(name, models[name]);
+        root[name] = model;
+        model['$tablename'] = model['$tablename'] || name.toLowerCase();
+        model['$classname'] = model['$classname'] || name;
     }
 
     return root;
@@ -39,6 +41,9 @@ export default function expandModels(models) {
                     `FOREIGN KEY (ridx) REFERENCES ${modelName} (idx) ON DELETE CASCADE`
                 );
 
+                value['$tablename'] = value['$tablename'] || newName.toLowerCase();
+                value['$classname'] = value['$classname'] || newName;
+
                 root[newName] = expandModel(newName, value);
 
                 if (!newModel.$append) newModel.$append = [];
@@ -57,6 +62,8 @@ export default function expandModels(models) {
                     `FOREIGN KEY (ridx) REFERENCES ${modelName} (idx) ON DELETE CASCADE`
                 );
                 
+                value['$tablename'] = value['$tablename'] || newName.toLowerCase();
+                value['$classname'] = value['$classname'] || newName;                
                 root[newName] = expandModel(newName, value);
             }
         }

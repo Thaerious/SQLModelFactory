@@ -42,9 +42,13 @@ setupTests(models, "Test setting array values on reflective object", function ()
 
     describe("assign reflected object", function () {
         before(function () {
-            this.c1 = new this.factory.classes.Cred({ "username": "billy" });
-            this.c2 = new this.factory.classes.Cred({ "username": "stevie" });
-            this.c1.friends.push(this.c2);
+            try {
+                this.c1 = new this.factory.classes.Cred({ "username": "billy" });
+                this.c2 = new this.factory.classes.Cred({ "username": "stevie" });
+                this.c1.friends.push(this.c2);
+            } catch (err) {
+                console.log(err);
+            }
         });
 
         it("is set locally", function () {
