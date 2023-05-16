@@ -19,4 +19,4 @@ const models = {
 const DBPATH = mkdirif("test", "assets", "test.db");
 const factory = new ModelFactory(DBPATH, {});
 
-factory.createTables(models);
+factory.init(models);

@@ -8,8 +8,6 @@ export default function createTable(factory, model, _fields = [], appends = []) 
     const fields = [..._fields, `idx INTEGER PRIMARY KEY AUTOINCREMENT`];
     const tablename = model.$tablename;
 
-    console.log('\nmodel', model);
-
     for (const key of Object.keys(model)) {
         console.log("key", key);
         if (key === "$append") {

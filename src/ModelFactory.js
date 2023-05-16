@@ -85,14 +85,6 @@ class ModelFactory {
         return this.models[name];
     }
 
-    createTables(models) {
-        this.models = new Model(models) || this.models;
-
-        for (const i in this.models) {      
-            createTable(this, this.models[i]);
-        }
-    }
-
     prepare(expression) {
         try {
             if (this.sq3) return this.sq3.prepare(expression);
@@ -120,12 +112,26 @@ class ModelFactory {
      * schema outlined in 'model' future operations may fail.
      */
     createClasses(models) {
-        this.models = new Model(models) || this.models;
+        if (models) this.models = new Model(models);
 
         for (const name in this.models) {
             this.classes[name] = classFactory(this, this.models[name]);
         }
         return this.classes;
+    }
+
+    createTables(models) {
+        if (models) this.models = new Model(models);
+
+        for (const i in this.models) {      
+            createTable(this, this.models[i]);
+        }
+    }
+
+    init(models) {
+        this.models = new Model(models);
+        this.createClasses();
+        this.createTables();
     }
 }
 
