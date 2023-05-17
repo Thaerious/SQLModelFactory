@@ -9,12 +9,12 @@ const models = {
         "name" : "VARCHAR(64)"
     },
     "Cred": {
-        "email": "VARCHAR(64)",
+        "email": "VARCHAR(64) NOT NULL",
         "name": {
             "first": "VARCHAR(64)",
             "last": "VARCHAR(64)"
         },
-        "game": "@Game",
+        "game": "@Game NOT NULL",
         "friends": ["@Cred"],
         "also_friends": "[]@Cred",
         "alias": [{
@@ -38,7 +38,7 @@ describe("test model class functionality", function () {
             it("check value", function () {
                 assert.strictEqual(
                     this.target.value,
-                    "VARCHAR(64)"
+                    "VARCHAR(64) NOT NULL"
                 );
             });
 
@@ -78,7 +78,7 @@ describe("test model class functionality", function () {
             it("check value", function () {
                 assert.strictEqual(
                     this.target.value,
-                    "@Game"
+                    "@Game NOT NULL"
                 );
             });
 

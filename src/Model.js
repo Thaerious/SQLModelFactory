@@ -1,5 +1,10 @@
 import expandModels from "./expandModels.js";
+import { extractClass } from "./extractClass.js";
 import logger from "./logger/setupLogger.js";
+
+function extractClassName(string){
+    return string.split(" ")[0];
+}
 
 class Value {
     constructor(value, field, root, parentModel) {
@@ -21,10 +26,10 @@ class Value {
         }
 
         if (Array.isArray(this.value)) parsedValue = this.value[0];
+        parsedValue = parsedValue.split(" ")[0]; // extract first value as model name
         if (parsedValue.startsWith("@")) parsedValue = parsedValue.substring(1);
         if (parsedValue.startsWith("[]")) parsedValue = parsedValue.substring(2);
 
-        //logger.log(this.root[name], name); // <-- need to extract the class name
         return this.root[parsedValue];
     }
 
