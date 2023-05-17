@@ -1,3 +1,5 @@
+import { ModelProxy } from "./Model.js";
+
 /**
  * Look for nested models and move them to their own model.
  */
@@ -7,7 +9,7 @@ export default function expandModels(models) {
 
     for (const name in models) {
         const model = expandModel(name, models[name]);
-        root[name] = model;
+        root[name] = new Proxy(model, new ModelProxy(model, root));
         model['$tablename'] = model['$tablename'] || name.toLowerCase();
         model['$classname'] = model['$classname'] || name;
     }
@@ -25,10 +27,14 @@ export default function expandModels(models) {
 
             if (Array.isArray(value)) {
                 value = value[0];
-                if (typeof value !== "object") continue;
+                if (typeof value !== "object") {
+                    // Referenced Array
+                    newModel[key] = `[]${value.substring(1)}`;
+                    continue;
+                }
 
                 const newName = `_t${i++}`;
-                newModel[key] = [`@${newName}`];
+                newModel[key] = `[]${newName}`;
 
                 value.$nested = {
                     parent: modelName,

@@ -9,7 +9,6 @@ export default function createTable(factory, model, _fields = [], appends = []) 
     const tablename = model.$tablename;
 
     for (const key of Object.keys(model)) {
-        console.log("key", key);
         if (key === "$append") {
             for (const v of model[key]) fields.push(v);
         }
@@ -28,8 +27,6 @@ export default function createTable(factory, model, _fields = [], appends = []) 
         }
         else {
             // nested class w/o @reference
-            console.log("nested class w/o @reference:", model.$tablename, key, model[key]);
-            console.log(model);
             fields.push(`${key} ${model[key]}`);
         }
     }

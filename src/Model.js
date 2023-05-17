@@ -1,9 +1,12 @@
 import expandModels from "./expandModels.js";
+import logger from "./logger/setupLogger.js";
 
 class Value {
-    constructor(value, root) {
+    constructor(value, field, root, parentModel) {
         this.root = root;
         this.value = value;
+        this.field = field;
+        this.parentModel = parentModel;
     }
 
     [Symbol.toPrimitive]() {
@@ -11,24 +14,59 @@ class Value {
     }
 
     deRef() {
-        let name = this.value;
-        if (Array.isArray(name)) name = name[0];
-        if (name.startsWith("@")) name = name.substring(1);
-        if (name.startsWith("[]")) name = name.substring(2);
-        return new Proxy(this.root[name], new ModelProxy(this.root[name], this.root));
+        let parsedValue = this.value;
+
+        if (this.isPrimitive()) {
+            throw new Error(`Cannot dereference a primitive field:`, this.root[this.value]);
+        }
+
+        if (Array.isArray(this.value)) parsedValue = this.value[0];
+        if (parsedValue.startsWith("@")) parsedValue = parsedValue.substring(1);
+        if (parsedValue.startsWith("[]")) parsedValue = parsedValue.substring(2);
+
+        //logger.log(this.root[name], name); // <-- need to extract the class name
+        return this.root[parsedValue];
+    }
+
+    isReference() {
+        if (typeof this.value !== "string") return false;
+        const extract = /@[a-zA-Z0-9_]+/.exec(this.value);
+        return extract != null;        
     }
 
     isArray() {
+        if (typeof this.value !== "string") return false;
+        const extract = /\[\][a-zA-Z0-9_]+/.exec(this.value);
+        return extract != null;     
+    }
+
+    isPrimitive() {
+        if (this.isReference()) return false;   
+        if (this.isArray()) return false;
+        return true;
+    }    
+
+    isNested() {
+        if (this.isPrimitive()) return false;
+        return this.deRef().$nested !== undefined;
+    }
+
+    indexTable() { 
+        return `${this.parentModel.$tablename}_${this.field}`.toLowerCase();
     }
 }
 
 class ModelProxy {
-    constructor(model, root) {
-        this.root = root || model;
+    constructor(model, rootModel) {
+        this.root = rootModel || model;
         this.model = model;
     }
 
     get(_, prop) {
+        if (typeof prop === "symbol") {
+            return Reflect.get(...arguments);
+        }
+
         if (prop.startsWith("$")) {
             if (this[prop]) return this[prop].bind(this);
             return this.model[prop];
@@ -38,10 +76,10 @@ class ModelProxy {
         if (Array.isArray(value)) value = value[0];
 
         if (typeof value === "object") {
-            return new Proxy(value, new ModelProxy(value, this.root));
+            return value;
         }
         else if (typeof value === "string") {
-            return new Value(this.model[prop], this.root);
+            return new Value(this.model[prop], prop, this.root, this.model);
         }
         else {
             return undefined;
@@ -61,9 +99,10 @@ class ModelProxy {
     }
 }
 
-export default class Model {
+class Model {
     constructor(source) {
         Object.assign(this, expandModels(source));
-        return new Proxy(this, new ModelProxy(this));
     }
 }
+
+export { Model as default, ModelProxy, Value }

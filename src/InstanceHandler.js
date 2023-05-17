@@ -47,22 +47,15 @@ export default class InstanceHandler {
     set(target, prop, value) {
         if (prop === "idx") throw new TypeError(`Cannot assign to read only property ${prop}`);
         if (prop === "ridx") throw new TypeError(`Cannot assign to read only property ${prop}`);
-console.log("set");
-console.log("set", prop);
-console.log("set", value);
         
         if (this.model.hasOwnProperty(prop)) {
-console.log(this.model[prop]);
             if (typeof value !== "object") {
-console.log('[a]');
                 return this._setPrim(...arguments);
             }
             else if (this.factory.isReflected(value)) {
-console.log('[b]');
                 return this._setRef(...arguments);
             }
             else {
-console.log('[c]');
                 return this._setNest(...arguments);
             }
         }
@@ -76,15 +69,12 @@ console.log('[c]');
     }
 
     _setNest(target, prop, value) {
-        console.log('[0]', value === undefined);
         if (value === undefined) {
-            console.log("[1]");
             target[prop].delete();
             target[prop].$delete();
             return Reflect.set(target, prop, instance);
         }
         else {
-            console.log("[2]");
             const aClass = this.factory.getClass(this.model[prop]);
             const instance = new aClass(value);
             this._updateDB(prop, instance.idx);

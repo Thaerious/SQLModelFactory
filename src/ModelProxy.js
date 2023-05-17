@@ -103,8 +103,6 @@ class ModelProxy {
     }
 
     set(target, prop, value) {
-        // console.log("Model Set", prop, value);
-
         if (prop.toString().startsWith("$")) {
             return Reflect.set(...arguments);
         }

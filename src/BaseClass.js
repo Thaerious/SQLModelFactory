@@ -2,6 +2,7 @@ import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import sqlifyList from "./sqlifyList.js";
+import logger from "./logger/setupLogger.js";
 import { extractClass, hasReference } from "./extractClass.js";
 
 export default class BaseClass {
@@ -13,13 +14,17 @@ export default class BaseClass {
         } else {
             const deferred = this._constructFromData(args[0]);
             const proxy = this.constructor._doProxy(this, this.idx);
-            processDeferred(this.constructor.factory, deferred, proxy);
+            // processDeferred(this.constructor.factory, deferred, proxy);
             return proxy;
         }
     }
 
     static get tablename() {
         return this.model.$tablename;
+    }
+
+    get model() {
+        return this.constructor.model;
     }
 
     /**
@@ -31,12 +36,78 @@ export default class BaseClass {
         ).run().lastInsertRowid;
     }
 
+    _constructFromData(source) {
+        this._insertPrimitivesAndReferences(source);
+        this._insertArrays(source);
+    }
+
+    _insertPrimitivesAndReferences(source) {
+        const keys = [];
+        const values = [];
+
+        for (const key of Object.keys(source)) {
+            if (!this.model[key]) continue;
+
+            if (this.model[key].isPrimitive()) {
+                keys.push(key);
+                values.push(source[key]);
+            }
+
+            if (this.model[key].isReference()) {
+                keys.push(key);
+                if (source[key].idx) {
+                    values.push(source[key].idx);
+                }
+                else {
+                    logger.log(this.model[key]);
+                    logger.log(this.model[key].deRef());
+                }
+            }
+        }
+
+        const placeHolders = new Array(keys.length).fill("?").join();
+
+        if (keys.length === 0) {
+            this._constructDefault();
+        }
+        else {
+            this.idx = this.constructor.factory.prepare(`
+                INSERT INTO ${this.constructor.tablename}
+                (${keys.join()})
+                VALUES (${placeHolders})
+            `).run(values).lastInsertRowid;
+        }
+    }
+
+    _insertArrays(source) {
+        const keys = [];
+        const values = [];
+
+        for (const key of Object.keys(source)) {
+            if (!this.model[key]) continue;
+            if (!this.model[key].isArray()) continue;
+
+            for (const i in source[key]) {
+                const aidx = i;
+                const ridx = this.idx;
+                const oidx = source[key][i].idx;
+
+                this.constructor.factory.prepare(`
+                    INSERT INTO ${this.model[key].indexTable()}
+                    (aidx, ridx, oidx)
+                    VALUES (?, ?, ?)
+                `).run(aidx, ridx, oidx).lastInsertRowid;
+            }
+        }
+    }
+
     /**
      * Construct a new instance based upon source values.
      */
-    _constructFromData(source) {
+    x_constructFromData(source) {
         // Build a list of fields from the source
         const list = listify(source, this.constructor.model);
+        logger.log(list);
         const { notDeferred, deferred } = extractDeferred(list);
         const seek = seekReflected(notDeferred, this.constructor.factory);
 
@@ -79,7 +150,7 @@ export default class BaseClass {
         const row = this.factory.prepare(`
             SELECT * FROM  ${this.tablename} WHERE ${div.where}
         `).get(div.values);
-        
+
         if (!row) return undefined;
 
         if (this.instantiated.has(row.idx)) {
@@ -131,7 +202,7 @@ export default class BaseClass {
         const row = this.factory.prepare(`
             SELECT * FROM  ${this.tablename} WHERE idx = ?
         `).get(idx);
-        
+
         const hnd = new InstanceHandler(
             row.idx,
             this.tablename,
@@ -222,15 +293,12 @@ export default class BaseClass {
  * Fields not found on the model are ignored.
  */
 function listify(target, model) {
-    console.log("listify ***************");
     const list = [];
     for (const key of Object.keys(target)) {
         const value = target[key];
-        console.log(key, model[key]);
         if (!model[key]) continue;
         list.push({ key: key, value: value, model: model[key] });
     }
-    console.log(list);
     return list;
 }
 
@@ -257,7 +325,7 @@ function extractDeferred(list) {
                 });
             }
         }
-        else if (data.model.startsWith("@_t")) {
+        else if (data.model.isReference()) {
             deferred.push({ ...data, ...{ type: 'field' } });
         }
         else {

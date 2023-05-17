@@ -1,7 +1,5 @@
 import { mkdirif } from "@thaerious/utility";
 import ModelFactory from "../../src/ModelFactory.js";
-import createTable from "../../src/createTable.js";
-import Model from "../../src/Model.js";
 
 const models = {
     "Game": {
@@ -18,5 +16,11 @@ const models = {
 
 const DBPATH = mkdirif("test", "assets", "test.db");
 const factory = new ModelFactory(DBPATH, {});
+const { Game, Cred } = factory.init(models);
 
-factory.init(models);
+const c1 = new Cred();
+factory.options = { verbose: console.log };
+// const c2 = new Cred({ username: "adam", friends: [{username}] });
+// console.log(c2);
+
+const g1 = new Game({ creator: { username: 'bill' } });

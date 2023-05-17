@@ -1,6 +1,5 @@
 import sqlite3 from "better-sqlite3";
 import classFactory from "./classFactory.js";
-import expandModels from "./expandModels.js";
 import Model from "./Model.js";
 import createTable from "./createTable.js";
 
@@ -129,9 +128,9 @@ class ModelFactory {
     }
 
     init(models) {
-        this.models = new Model(models);
-        this.createClasses();
+        this.models = new Model(models);        
         this.createTables();
+        return this.createClasses();
     }
 }
 
