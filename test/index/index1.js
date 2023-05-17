@@ -6,7 +6,7 @@ const models = {
         "name": "VARCHAR(64)"
     },
     "Cred": {
-        "email": "VARCHAR(64)",
+        "email": "VARCHAR(64) NOT NULL",
         "name": {
             "first": "VARCHAR(64)",
             "last": "VARCHAR(64)"
@@ -15,22 +15,25 @@ const models = {
         "friends": ["@Cred"],
         "alias": [{
             "street": "VARCHAR(64)"
-        }]
+        }],
+        "$append": [
+            "apple",
+            "pear"
+        ]
     }
 };
 
-(function(){
+(function () {
     this.models = new Model(models);
     this.target = this.models.Cred.alias;
 
-    console.log(this.models);
+    for (const field of this.models.Cred) {
+        console.log(field + "");
+    }
+    
+    for (const e of this.models.Cred.$append) {
+        console.log(e);
+    }    
 
-    console.log("target", this.target.value);
-    console.log("deref", this.target.deRef());
-
-    assert.strictEqual(
-        this.target.deRef(),
-        this.models["_t1"]
-    );    
 }.bind({}))()
 

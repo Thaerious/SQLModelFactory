@@ -18,8 +18,8 @@ export default function setupTests(models, label, ...tests) {
 
         before(function () {
             this.factory = new ModelFactory(DBPATH, { /* verbose: console.log */ });
-            this.classes = this.factory.createClasses(models);
-            this.factory.createTables();
+            this.factory.init(models);
+            this.classes = this.factory.classes;
         });
 
         after(function () {

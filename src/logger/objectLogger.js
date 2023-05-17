@@ -1,5 +1,6 @@
 export default function objectLogger(obj) {
     if (typeof obj !== "object") return obj;
+    if (obj[Symbol.toStringTag]) return obj[Symbol.toStringTag];
     return doFormat(obj);
 }
 

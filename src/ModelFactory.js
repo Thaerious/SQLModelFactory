@@ -70,7 +70,7 @@ class ModelFactory {
      * If the string is within an array it must be an array of length 1.
      * Returns undefined if no class found.
      */
-    getClass(name) {
+    getClass(name) {   
         if (Array.isArray(name)) name = name[0];
         if (name.startsWith("@")) name = name.substring(1);
         if (name.startsWith("[]")) name = name.substring(2);

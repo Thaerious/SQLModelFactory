@@ -6,33 +6,28 @@ import Model from "./Model.js";
 */
 export default function createTable(factory, model, _fields = [], appends = []) {
     const fields = [..._fields, `idx INTEGER PRIMARY KEY AUTOINCREMENT`];
-    const tablename = model.$tablename;
 
-    for (const key of Object.keys(model)) {
-        if (key === "$append") {
-            for (const v of model[key]) fields.push(v);
-        }
-        else if (key.startsWith("$")) {
-            continue;
-        }
-        else if (model.$isReference(key)) {
+    for (const field of model) {       
+        if (field.isReference()) {
             // a known @class RHS rule
-            const extract = extractClass(key, model[key].value);
-            fields.push(`${key} ${extract.column}`);
-            appends.push(extract.foreignKey);
+            const extract = field.value.split(" ");
+            extract[0] = "INTEGER";
+            fields.push(`${field.key} ${extract.column}`);
+            model.$append.push(`FOREIGN KEY (${field.key}) REFERENCES ${field.deRef().$classname} (idx)`);
         }
-        else if (model.$isArray(key)) {
-            model[key].deRef().$indexTable = `${tablename}_${key}`;
-            createArrayIndexTable(factory, `${tablename}_${key}`, tablename);
+        else if (field.isArray()) {
+            createArrayIndexTable(factory,  field.indexTable(), model.$tablename);
         }
         else {
             // nested class w/o @reference
-            fields.push(`${key} ${model[key]}`);
+            fields.push(`${field.key} ${field.value}`);
         }
     }
 
+    for (const e of model.$append.flat()) fields.push(e);
+
     const columns = [...fields, ...appends].join(",\n\t");
-    const statement = factory.prepare(`CREATE TABLE IF NOT EXISTS ${tablename}(\n\t${columns}\n)`);
+    const statement = factory.prepare(`CREATE TABLE IF NOT EXISTS ${model.$tablename}(\n\t${columns}\n)`);
     statement.run();
     return statement;
 }

@@ -1,7 +1,7 @@
 import assert from "assert";
-import ModelFactory from "../src/ModelFactory.js";
+import ModelFactory from "../../src/ModelFactory.js";
 import ParseArgs from "@thaerious/parseargs";
-import setupTests from "./util/setup.js";
+import setupTests from "../util/setup.js";
 
 const args = new ParseArgs().run();
 

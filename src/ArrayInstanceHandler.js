@@ -1,4 +1,5 @@
 import InstanceHandler from "./InstanceHandler.js";
+import logger from "./logger/setupLogger.js";
 
 class ReflectiveTypeError extends Error {
     constructor(prop, value) {
@@ -19,26 +20,8 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * Handles setting and storing values in an array field.
      */
     set(target, prop, value) {
-        if (this.factory.isReflected(value)) {
-            const aClass = this.factory.getClass(this.model);
-            if (value instanceof aClass === false) {
-                throw new ReflectiveTypeError(prop, value);
-            }
-            return this.setAndReflect(target, prop, value);
-        }
-        else if (Array.isArray(value)) {
-            // ???
-        }
-        else if (typeof value === "object") {
-            const aClass = this.factory.getClass(this.model);
-            return this.setAndReflect(target, prop, new aClass(value));
-        }
-
-        if (prop === "length") {
-            return Reflect.set(...arguments);
-        }
-
-        throw new TypeError(`Expected 'object' found '${typeof value}'`);
+        if (prop === "length") return Reflect.set(...arguments);
+        return super.set(...arguments);
     }
 
     setAndReflect(target, prop, value) {
@@ -56,7 +39,7 @@ export default class ArrayInstanceHandler extends InstanceHandler {
      * Handles removing (deleting) data from an array field.
      */
     deleteProperty(target, prop) {
-        const model = this.factory.getModel(this.model)
+        const model = this.factory.getModel(this.model.deRef().$classname);
 
         if (target[prop]) {
             if (model.$nested) {

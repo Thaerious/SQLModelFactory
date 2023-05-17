@@ -74,6 +74,6 @@ export default function expandModels(models) {
             }
         }
 
-        return newModel;
+        return new Proxy(newModel, new ModelProxy(newModel, root));
     }
 }

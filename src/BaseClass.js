@@ -3,7 +3,7 @@ import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
 import sqlifyList from "./sqlifyList.js";
 import logger from "./logger/setupLogger.js";
-import { extractClass, hasReference } from "./extractClass.js";
+import { hasReference } from "./extractClass.js";
 
 export default class BaseClass {
     constructor(...args) {
@@ -12,9 +12,8 @@ export default class BaseClass {
             this._constructDefault();
             return this.constructor._doProxy(this, this.idx);
         } else {
-            const deferred = this._constructFromData(args[0]);
+            this._constructFromData(args[0]);
             const proxy = this.constructor._doProxy(this, this.idx);
-            // processDeferred(this.constructor.factory, deferred, proxy);
             return proxy;
         }
     }
@@ -99,32 +98,6 @@ export default class BaseClass {
                 `).run(aidx, ridx, oidx).lastInsertRowid;
             }
         }
-    }
-
-    /**
-     * Construct a new instance based upon source values.
-     */
-    x_constructFromData(source) {
-        // Build a list of fields from the source
-        const list = listify(source, this.constructor.model);
-        logger.log(list);
-        const { notDeferred, deferred } = extractDeferred(list);
-        const seek = seekReflected(notDeferred, this.constructor.factory);
-
-        if (seek.length === 0) {
-            this._constructDefault();
-        } else {
-            // Insert each value from 'source' into the DB
-            const div = sqlifyList(seek);
-
-            this.idx = this.constructor.factory.prepare(`
-                INSERT INTO ${this.constructor.tablename}
-                (${div.keys})
-                VALUES (${div.placeHolders})
-            `).run(div.values).lastInsertRowid;
-        }
-
-        return deferred;
     }
 
     /**
@@ -224,21 +197,20 @@ export default class BaseClass {
     static _arrayify(idx) {
         const data = {};
 
-        for (const key of Object.keys(this.model)) {
-            if (key.startsWith("$")) continue;
-            if (Array.isArray(this.model[key])) {
-                const childTableName = `${this.tablename}_${key}`;
-                const array = this._loadArray(idx, childTableName, this.model[key]);
-                const instanceClass = this.factory.getClass(this.model[key]);
+        for (const field of this.model) {
+            if (field.isArray()) {
+                const childTableName = `${this.tablename}_${field.key}`;
+                const array = this._loadArray(idx, childTableName, field);
+                const instanceClass = this.factory.getClass(field.deRef().$classname);
 
                 const ahnd = new ArrayInstanceHandler(
                     idx,
                     childTableName,
-                    this.model[key],
+                    this.model[field.key],
                     instanceClass,
                 );
 
-                data[key] = new Proxy(array, ahnd);
+                data[field.key] = new Proxy(array, ahnd);
             }
         }
 
@@ -253,11 +225,12 @@ export default class BaseClass {
     static _deReference(row) {
         const data = {};
 
-        for (const key of Object.keys(this.model)) {
-            if (hasReference(this.model[key]) && row[key]) {
-                const aClass = this.factory.getClass(this.model[key]);
-                if (!aClass) throw new TypeError(`unknown class ${this.model[key]}`);
-                data[key] = aClass.get(row[key]);
+        for (const field of this.model) {
+            if (field.isReference() && row[field.key]) {
+
+                const aClass = this.factory.getClass(field.deRef().$classname);
+                if (!aClass) throw new TypeError(`unknown class ${this.model[field.key]}`);
+                data[field.key] = aClass.get(row[field.key]);
             }
         }
 
@@ -270,10 +243,10 @@ export default class BaseClass {
      * @param {Integer} rootIdx - The index of parent (root) object.
      * @param {String} childTableName - The name of the child table.
      */
-    static _loadArray(rootIdx, childTableName, arrayModel) {
+    static _loadArray(rootIdx, childTableName, field) {        
         const array = [];
 
-        const aClass = this.factory.getClass(arrayModel);
+        const aClass = this.factory.getClass(field.deRef().$classname);
 
         const all = this.factory.prepare(`
             SELECT * FROM ${childTableName} WHERE ridx = ?
