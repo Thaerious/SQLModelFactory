@@ -1,4 +1,5 @@
 import { extractClass } from "./extractClass.js";
+import logger from "./logger/setupLogger.js";
 
 /**
  * Handles the storage and retrieval of instanced data.
@@ -102,7 +103,10 @@ export default class InstanceHandler {
 
     deleteProperty(target, prop) {
         if (target[prop]) {
-            if (target[prop].model.$nested) {
+            if (target.model[prop].isPrimitive()) {     
+                this._updateDB(prop, undefined);
+            }
+            if (target.model[prop].isNested()) {
                 target[prop].delete();
             }
         }

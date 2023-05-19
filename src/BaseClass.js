@@ -1,9 +1,7 @@
 import divideObject from "./divideObject.js";
 import ArrayInstanceHandler from "./ArrayInstanceHandler.js";
 import InstanceHandler from "./InstanceHandler.js";
-import sqlifyList from "./sqlifyList.js";
 import logger from "./logger/setupLogger.js";
-import { hasReference } from "./extractClass.js";
 
 export default class BaseClass {
     constructor(...args) {
@@ -108,15 +106,19 @@ export default class BaseClass {
      * 'idx', otherwise the key-values of the object are used.  It retrieves objects where
      * the column-values of the DB match exactly the key-values of the conditions object.
      * 
+     * Options supports the following:
+     *  - new (default false): retrieve the object from the DB not from previously instantiated
+     * 
      * @param {Integer | Object} conditions - Selector for which row to retrieve.
+     * @param {Object} options - Alters the behaviour of get
      */
-    static get(conditions) {
-        if (this.factory.isReflected(conditions)) {
+    static get(conditions, options = {}) {
+        if (!options.new && this.factory.isReflected(conditions)) {
             return this.instantiated.get(conditions.idx);
         }
 
         if (typeof conditions === "number") {
-            return this.getByIdx(conditions);
+            return this.getByIdx(conditions, options);
         }
 
         const div = divideObject(conditions);
@@ -126,18 +128,18 @@ export default class BaseClass {
 
         if (!row) return undefined;
 
-        if (this.instantiated.has(row.idx)) {
+        if (!options.new && this.instantiated.has(row.idx)) {
             return this.instantiated.get(row.idx);
         }
 
         return this._doProxy(Object.create(this.prototype), row.idx);
     }
 
-    static getByIdx(idx) {
-        if (this.instantiated.has(idx)) {
+    static getByIdx(idx, options) {
+        if (!options.new && this.instantiated.has(idx)) {
             return this.instantiated.get(idx);
         } else {
-            return this.get({ idx: idx });
+            return this.get({ idx: idx }, options);
         }
     }
 
